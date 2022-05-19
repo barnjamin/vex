@@ -1,0 +1,119 @@
+#pragma version 7
+intcblock 0 1 2 3
+txn ApplicationID
+intc_0 // 0
+==
+txn NumAppArgs
+intc_0 // 0
+==
+&&
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l14
+txn NumAppArgs
+intc_0 // 0
+==
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+&&
+bnz main_l13
+txn NumAppArgs
+intc_0 // 0
+==
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+&&
+bnz main_l12
+txn NumAppArgs
+intc_0 // 0
+==
+txn OnCompletion
+intc_1 // OptIn
+==
+&&
+bnz main_l11
+txn NumAppArgs
+intc_0 // 0
+==
+bnz main_l10
+txn NumAppArgs
+intc_0 // 0
+==
+txn OnCompletion
+intc_2 // CloseOut
+==
+&&
+bnz main_l9
+txna ApplicationArgs 0
+pushbytes 0x978c398a // "bootstrap(string)string"
+==
+txn NumAppArgs
+intc_2 // 2
+==
+&&
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l8
+err
+main_l8:
+txna ApplicationArgs 1
+callsub bootstrap_0
+store 0
+pushbytes 0x151f7c75 // 0x151F7C75
+load 0
+concat
+log
+intc_1 // 1
+return
+main_l9:
+intc_1 // 1
+return
+main_l10:
+intc_1 // 1
+return
+main_l11:
+intc_1 // 1
+return
+main_l12:
+intc_1 // 1
+return
+main_l13:
+intc_1 // 1
+return
+main_l14:
+intc_1 // 1
+return
+
+// bootstrap
+bootstrap_0:
+store 1
+pushint 5000 // 5000
+load 1
+extract 2 0
+box_create
+load 1
+extract 2 0
+intc_0 // 0
+pushbytes 0x616263313233 // "abc123"
+box_replace
+load 1
+extract 2 0
+intc_0 // 0
+intc_3 // 3
+box_extract
+len
+itob
+extract 6 0
+load 1
+extract 2 0
+intc_0 // 0
+intc_3 // 3
+box_extract
+concat
+retsub
