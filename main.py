@@ -5,5 +5,6 @@ def main():
 
     act = ApplicationCallTxn()
 
+
 if __name__ == "__main__":
     main()

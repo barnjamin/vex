@@ -156,9 +156,15 @@ class OrderQueue:
     # Virtual field?
     Queue: abi.DynamicArray[RestingOrder]
 
-    def box_key(slot: Slot)->abi.String:
-        # given slot, figure out which box and what offset into box 
-        pass
+    Price: abi.Uint64
+
+    def box_key(self, slot: Slot) -> abi.String:
+        # given slot, figure out which box and what offset into box
+        order_size = 40
+        box_size = 16000
+        box_index = (slot * order_size) / box_size
+
+        return f"{self.Price}-{box_index}"
 
     def write(self, slot: Slot, vals: Dict[str, abi.BaseType]):
         box_key: abi.String = self.box_key(slot)

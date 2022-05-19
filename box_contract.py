@@ -9,6 +9,7 @@ router.add_bare_call(Approve(), OnComplete.OptIn)
 router.add_bare_call(Approve(), OnComplete.ClearState)
 router.add_bare_call(Approve(), OnComplete.CloseOut)
 
+
 @router.add_method_handler
 @ABIReturnSubroutine
 def bootstrap(key: abi.String, *, output: abi.String):
@@ -16,8 +17,9 @@ def bootstrap(key: abi.String, *, output: abi.String):
         BoxCreate(key.get(), Int(1024)),
         BoxReplace(key.get(), Int(0), Bytes("abc123")),
         output.set(BoxExtract(key.get(), Int(0), Int(3))),
-        BoxDelete(key.get())
+        BoxDelete(key.get()),
     )
+
 
 if __name__ == "__main__":
     import os

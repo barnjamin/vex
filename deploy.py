@@ -8,13 +8,14 @@ from algosdk.kmd import KMDClient
 from box_contract import router
 
 host = "http://localhost:4001"
-token = "a"*64
+token = "a" * 64
 
 KMD_ADDRESS = "http://localhost:4002"
 KMD_TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 KMD_WALLET_NAME = "unencrypted-default-wallet"
 KMD_WALLET_PASSWORD = ""
+
 
 def get_sandbox_accounts():
     kmd = KMDClient(KMD_TOKEN, KMD_ADDRESS)
@@ -42,8 +43,6 @@ def get_sandbox_accounts():
         kmd.release_wallet_handle(walletHandle)
 
     return kmdAccounts
-
-
 
 
 def create_app(
@@ -134,13 +133,20 @@ def call_app(client: algod.AlgodClient, addr: str, sk: str, id: int):
     sp = client.suggested_params()
     box_name = "test"
     sel = bytes.fromhex("978c398a")
-    txn = ApplicationCallTxn(addr, sp, id, OnComplete.NoOpOC, boxes=[BoxReference(0, box_name)], app_args=[sel, abi.StringType().encode(box_name)])
+    txn = ApplicationCallTxn(
+        addr,
+        sp,
+        id,
+        OnComplete.NoOpOC,
+        boxes=[BoxReference(0, box_name)],
+        app_args=[sel, abi.StringType().encode(box_name)],
+    )
     signed = txn.sign(sk)
-    #print(dir(signed))
+    # print(dir(signed))
     txid = client.send_transaction(signed)
-    #encoded = encoding.msgpack_encode(signed)
-    #decoded = encoding.future_msgpack_decode(encoded)
-    #print(encoded, decoded.transaction)
+    # encoded = encoding.msgpack_encode(signed)
+    # decoded = encoding.future_msgpack_decode(encoded)
+    # print(encoded, decoded.transaction)
     print(wait_for_confirmation(client, txid, 2))
 
 
@@ -177,15 +183,15 @@ if __name__ == "__main__":
     app_id = 1
     app_addr = logic.get_application_address(app_id)
 
-    #app_id, app_addr = create_app(client, addr, sk, approval, clear)
-    #print(f"Created {app_id} with app address {app_addr}")
+    # app_id, app_addr = create_app(client, addr, sk, approval, clear)
+    # print(f"Created {app_id} with app address {app_addr}")
 
     update_app(client, addr, sk, app_id, approval, clear)
 
-    #sp = client.suggested_params()
-    #ptxn = PaymentTxn(addr, sp, app_addr, int(5e6))
-    #txid = client.send_transaction(ptxn.sign(sk))
-    #print("Payment sent, waiting for confirmation")
-    #wait_for_confirmation(client, txid, 4)
+    # sp = client.suggested_params()
+    # ptxn = PaymentTxn(addr, sp, app_addr, int(5e6))
+    # txid = client.send_transaction(ptxn.sign(sk))
+    # print("Payment sent, waiting for confirmation")
+    # wait_for_confirmation(client, txid, 4)
 
     call_app(client, addr, sk, app_id)
