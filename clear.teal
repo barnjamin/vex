@@ -1,9 +1,7 @@
 #pragma version 7
-txn NumAppArgs
-pushint 0 // 0
-==
+pushint 1 // 1
 bnz main_l2
 err
 main_l2:
-pushint 1 // 1
+pushint 0 // 0
 return

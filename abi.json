@@ -1,1 +1,1 @@
-{"name": "Contract", "methods": [{"name": "bootstrap", "args": [{"type": "string"}], "returns": {"type": "string"}}], "desc": null, "networks": {}}
+{"name": "Contract", "methods": [{"name": "boostrap", "args": [], "returns": {"type": "void"}}], "desc": null, "networks": {}}

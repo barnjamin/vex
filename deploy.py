@@ -1,11 +1,10 @@
 import base64
-from pydoc import cli
 from algosdk import *
 from algosdk.v2client import algod
 from algosdk.future.transaction import *
-from pyteal import Mode, OptimizeOptions, compileTeal
 from algosdk.kmd import KMDClient
-from box_contract import router
+from algosdk.atomic_transaction_composer import *
+from algosdk import abi
 
 host = "http://localhost:4001"
 token = "a" * 64
@@ -45,8 +44,16 @@ def get_sandbox_accounts():
     return kmdAccounts
 
 
+def pay(client: algod.AlgodClient, addr: str, sk: str, rcv: str, amt=int(4e6)):
+    sp = client.suggested_params()
+    ptxn = PaymentTxn(addr, sp, rcv, amt)
+    txid = client.send_transaction(ptxn.sign(sk))
+    print("Payment sent, waiting for confirmation")
+    wait_for_confirmation(client, txid, 3)
+
+
 def create_app(
-    client: algod.AlgodClient, addr: str, pk: str, approval: str, clear: str
+    client: algod.AlgodClient, addr: str, sk: str, approval: str, clear: str
 ) -> int:
     # Get suggested params from network
     sp = client.suggested_params()
@@ -62,7 +69,8 @@ def create_app(
     clear_bytes = base64.b64decode(clear_result["result"])
 
     # We dont need no stinkin storage
-    schema = StateSchema(0, 0)
+    gschema = StateSchema(4, 0)
+    lschema = StateSchema(0, 0)
 
     # Create the transaction
     create_txn = ApplicationCreateTxn(
@@ -71,12 +79,12 @@ def create_app(
         0,
         app_bytes,
         clear_bytes,
-        schema,
-        schema,
+        gschema,
+        lschema,
     )
 
     # Sign it
-    signed_txn = create_txn.sign(pk)
+    signed_txn = create_txn.sign(sk)
 
     # Ship it
     txid = client.send_transaction(signed_txn)
@@ -129,69 +137,19 @@ def update_app(
     print("Confirmed in round: {}".format(result["confirmed-round"]))
 
 
-def call_app(client: algod.AlgodClient, addr: str, sk: str, id: int):
+def delete_app(client: algod.AlgodClient, addr: str, sk: str,  app_id:int):
+
     sp = client.suggested_params()
-    box_name = "test"
-    sel = bytes.fromhex("978c398a")
-    txn = ApplicationCallTxn(
+    # Create the transaction
+    create_txn = ApplicationDeleteTxn(
         addr,
         sp,
-        id,
-        OnComplete.NoOpOC,
-        boxes=[BoxReference(0, box_name)],
-        app_args=[sel, abi.StringType().encode(box_name)],
-    )
-    signed = txn.sign(sk)
-    # print(dir(signed))
-    txid = client.send_transaction(signed)
-    # encoded = encoding.msgpack_encode(signed)
-    # decoded = encoding.future_msgpack_decode(encoded)
-    # print(encoded, decoded.transaction)
-    print(wait_for_confirmation(client, txid, 2))
-
-
-if __name__ == "__main__":
-    approval, clear, iface = router.build_program()
-
-    approval = compileTeal(
-        approval,
-        mode=Mode.Application,
-        version=7,
-        assembleConstants=True,
-        optimize=OptimizeOptions(scratch_slots=True),
-    )
-    clear = compileTeal(
-        clear,
-        mode=Mode.Application,
-        version=7,
-        assembleConstants=True,
-        optimize=OptimizeOptions(scratch_slots=True),
+        app_id,
     )
 
-    # with open("approval.teal", "r") as f:
-    #    approval = f.read()
+    # Sign it
+    signed_txn = create_txn.sign(sk)
 
-    # with open("clear.teal", "r") as f:
-    #    clear = f.read()
-
-    client = algod.AlgodClient(token, host)
-
-    accts = get_sandbox_accounts()
-    addr, sk = accts[0]
-    print(addr, sk)
-
-    app_id = 1
-    app_addr = logic.get_application_address(app_id)
-
-    # app_id, app_addr = create_app(client, addr, sk, approval, clear)
-    # print(f"Created {app_id} with app address {app_addr}")
-
-    update_app(client, addr, sk, app_id, approval, clear)
-
-    # sp = client.suggested_params()
-    # ptxn = PaymentTxn(addr, sp, app_addr, int(5e6))
-    # txid = client.send_transaction(ptxn.sign(sk))
-    # print("Payment sent, waiting for confirmation")
-    # wait_for_confirmation(client, txid, 4)
-
-    call_app(client, addr, sk, app_id)
+    # Ship it
+    txid = client.send_transaction(signed_txn)
+    wait_for_confirmation(client, txid, 4)
