@@ -57,6 +57,7 @@ def update(app_id: int):
 def delete(app_id: int):
     delete_app(client, addr, sk, app_id)
 
+
 def call_bootstrap(app_id: int):
     meth = get_method("boostrap")
 
@@ -67,23 +68,15 @@ def call_bootstrap(app_id: int):
     for res in result.abi_results:
         print(res.__dict__)
 
-def call_get_ob(app_id: int):
-    meth = get_method("get_orderbook")
-
-    sp = client.suggested_params()
-    atc = AtomicTransactionComposer()
-    atc.add_method_call(app_id, meth, addr, sp, signer, [])
-    result = atc.execute(client, 2)
-    for res in result.abi_results:
-        print(res.__dict__)
 
 def call_new_order(app_id: int):
-    meth = get_method("boostrap")
+    meth = get_method("order")
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [])
     result = atc.execute(client, 2)
+
     for res in result.abi_results:
         print(res.__dict__)
 
@@ -91,5 +84,5 @@ def call_new_order(app_id: int):
 if __name__ == "__main__":
     app_id, app_addr = create()
     call_bootstrap(app_id)
-    call_get_ob(app_id)
+    call_new_order(app_id)
     delete(app_id)

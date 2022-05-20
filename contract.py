@@ -1,5 +1,6 @@
 from pyteal import *
 from models import *
+from operations import *
 
 
 router = Router()
@@ -18,26 +19,25 @@ router.add_bare_call(
 def boostrap():
     return Seq(init_orderbook())
 
-OrderBookType = OrderBook().get_type()
+
+IncomingOrderType = IncomingOrder().get_type()
+
 
 @router.add_method_handler
 @ABIReturnSubroutine
-def get_orderbook(*, output: OrderBookType):
+def new_order(order: IncomingOrderType, *, output: abi.String):
     return Seq(
-        output.decode(read_orderbook())
+        (ob := OrderBook()).decode(read_orderbook()),
+        (io := IncomingOrder()).decode(order.encode()),
+        ob.add_new_order(io),
+        output.set("ok"),
     )
 
 
-# @router.add_method_handler
-# @ABIReturnSubroutine
-# def new_order(order: IncomingOrder, *, output: abi.String):
-#    return Seq(
-#        (ob := OrderBook()).decode(get_orderbook()),
-#        BoxCreate(get_price_queue_key(order.Price), Int(1024)),
-#        BoxReplace(key.get(), Int(0), Bytes("abc123")),
-#        output.set(BoxExtract(key.get(), Int(0), Int(3))),
-#        BoxDelete(key.get()),
-#    )
+# BoxCreate(get_price_queue_key(order.Price), Int(1024)),
+# BoxReplace(key.get(), Int(0), Bytes("abc123")),
+# output.set(BoxExtract(key.get(), Int(0), Int(3))),
+# BoxDelete(key.get()),
 
 if __name__ == "__main__":
     import os

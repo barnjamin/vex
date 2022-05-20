@@ -1,17 +1,17 @@
 #pragma version 7
-intcblock 1 0 4
-bytecblock 0x6f62
+intcblock 0 1 4 2
+bytecblock 0x151f7c75 0x6f626d 0x6f6262 0x6f6261 0x6f6264
 txn ApplicationID
-intc_1 // 0
+intc_0 // 0
 ==
-intc_0 // 1
+intc_1 // 1
 &&
 txn OnCompletion
-intc_1 // NoOp
+intc_0 // NoOp
 ==
 &&
-bnz main_l8
-intc_0 // 1
+bnz main_l12
+intc_1 // 1
 txn OnCompletion
 intc_2 // UpdateApplication
 ==
@@ -20,63 +20,156 @@ pushint 5 // DeleteApplication
 ==
 ||
 &&
-bnz main_l7
-intc_0 // 1
+bnz main_l11
+intc_1 // 1
 txn OnCompletion
-intc_0 // OptIn
+intc_1 // OptIn
 ==
 txn OnCompletion
-pushint 2 // CloseOut
+intc_3 // CloseOut
 ==
 ||
 &&
-bnz main_l6
+bnz main_l10
 txna ApplicationArgs 0
 pushbytes 0x8ec49881 // "boostrap()void"
 ==
 txn NumAppArgs
-intc_0 // 1
+intc_1 // 1
 ==
 &&
 txn OnCompletion
-intc_1 // NoOp
+intc_0 // NoOp
 ==
 &&
-bnz main_l5
+bnz main_l9
+txna ApplicationArgs 0
+pushbytes 0x161aef51 // "get_orderbook()(uint64,uint64,uint64,uint8)"
+==
+txn NumAppArgs
+intc_1 // 1
+==
+&&
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l8
+txna ApplicationArgs 0
+pushbytes 0x574e80c3 // "new_order((bool,uint64,uint64,address))string"
+==
+txn NumAppArgs
+intc_3 // 2
+==
+&&
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l7
 err
-main_l5:
-callsub boostrap_1
-intc_0 // 1
-return
-main_l6:
-intc_1 // 0
-return
 main_l7:
+txna ApplicationArgs 1
+callsub neworder_4
+store 1
+bytec_0 // 0x151F7C75
+load 1
+concat
+log
+intc_1 // 1
+return
+main_l8:
+callsub getorderbook_3
+store 0
+bytec_0 // 0x151F7C75
+load 0
+concat
+log
+intc_1 // 1
+return
+main_l9:
+callsub boostrap_2
+intc_1 // 1
+return
+main_l10:
+intc_0 // 0
+return
+main_l11:
 txn Sender
 global CreatorAddress
 ==
 return
-main_l8:
-intc_0 // 1
+main_l12:
+intc_1 // 1
 return
 
 // init_orderbook
 initorderbook_0:
-pushint 200 // 200
-bytec_0 // "ob"
-box_create
+bytec_1 // "obm"
+intc_0 // 0
+app_global_put
+bytec_2 // "obb"
+intc_0 // 0
+app_global_put
+bytec_3 // "oba"
+intc_0 // 0
+app_global_put
+bytec 4 // "obd"
 intc_2 // 4
-store 0
-bytec_0 // "ob"
-pushint 192 // 192
+app_global_put
+retsub
+
+// read_orderbook
+readorderbook_1:
+bytec_1 // "obm"
+app_global_get
+store 3
+bytec_2 // "obb"
+app_global_get
+store 4
+bytec_3 // "oba"
+app_global_get
+store 5
+bytec 4 // "obd"
+app_global_get
+store 6
+load 6
+pushint 256 // 256
+<
+assert
+load 3
+itob
+load 5
+itob
+concat
+load 4
+itob
+concat
 pushbytes 0x00 // 0x00
-intc_1 // 0
-load 0
+intc_0 // 0
+load 6
 setbyte
-box_replace
+concat
 retsub
 
 // boostrap
-boostrap_1:
+boostrap_2:
 callsub initorderbook_0
+retsub
+
+// get_orderbook
+getorderbook_3:
+callsub readorderbook_1
+retsub
+
+// new_order
+neworder_4:
+extract 17 0
+store 2
+load 2
+len
+itob
+extract 6 0
+load 2
+concat
 retsub

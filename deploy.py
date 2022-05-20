@@ -137,7 +137,7 @@ def update_app(
     print("Confirmed in round: {}".format(result["confirmed-round"]))
 
 
-def delete_app(client: algod.AlgodClient, addr: str, sk: str,  app_id:int):
+def delete_app(client: algod.AlgodClient, addr: str, sk: str, app_id: int):
 
     sp = client.suggested_params()
     # Create the transaction

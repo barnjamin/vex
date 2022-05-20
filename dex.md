@@ -21,5 +21,7 @@ This design should:
 - Allow Order Cancelling/Modification (User holds ref to order and submits cancel for it)
 
 
+Reset seq/priority on move toward mid and increase size
+
 
 Allow BATCH operations
