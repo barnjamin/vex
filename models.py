@@ -173,21 +173,23 @@ class AppState:
 PageIndicies = abi.StaticArray[abi.Uint8, Literal[32]]
 
 
-class Doofus:
-    # Pages represents up to 10 pages of orders,
-    # each page has an address (32 byte array)
-    # each index for each page has an associated bit
-    # in the Address byte array
-    # is stored at a uint8 index per page
 
-    # box key prefix
-    # track slots open
-    # if no slots open,
-    # manage adding pages, (need txn to include it)
-    # todo: figure out who to charge?
-    # assign slot to write
-    # ABI r/w codec
-    # static ABI Type _only_, so we can track offsets
+# Pages represents up to N pages of orders,
+# each page has an address (32 byte array)
+# each index for each page has an associated bit
+# in the Address byte array
+# is stored at a uint8 index per page
+
+# box key prefix
+# track slots open
+# if no slots open,
+# manage adding pages, (need txn to include it)
+# todo: figure out who to charge?
+# assign slot to write
+# ABI r/w codec
+# static ABI Type _only_, so we can track offsets
+
+class Doofus:
 
     def __init__(self, key: str, t: "NamedTuple"):
         self.key = key
@@ -205,7 +207,7 @@ class Doofus:
         return BoxExtract(
             Bytes(f"{self.key}-pages"),
             Int(0),
-            Int(32 * 10),
+            Int(int(MAX_BOX_SIZE/4)),
         )
 
     def write_page_indicies(self, page: Expr) -> Expr:

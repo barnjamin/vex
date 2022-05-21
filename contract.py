@@ -15,6 +15,7 @@ TOP_BID_PTR = "top_bid_ptr"
 BOTTOM_BID_PTR = "bottom_bid_ptr"
 TOP_ASK_PTR = "top_ask_ptr"
 BOTTOM_ASK_PTR = "bottom_ask_ptr"
+SEQUENCE = "sequence"
 
 BALANCE_A = "balance_a"
 BALANCE_B = "balance_b"
@@ -37,45 +38,60 @@ class Vex(AppState):
         BOTTOM_BID_PTR: GlobalStorageValue(BOTTOM_BID_PTR, abi.Uint64()),
         TOP_ASK_PTR: GlobalStorageValue(TOP_ASK_PTR, abi.Uint64()),
         BOTTOM_ASK_PTR: GlobalStorageValue(BOTTOM_ASK_PTR, abi.Uint64()),
+        SEQUENCE: GlobalStorageValue(SEQUENCE, abi.Uint64())
     }
 
-    local_state: Dict[str, LocalStorageValue] = {
+    Local: Dict[str, LocalStorageValue] = {
         BALANCE_A: LocalStorageValue(BALANCE_A, abi.Uint64()),
         BALANCE_B: LocalStorageValue(BALANCE_B, abi.Uint64()),
         ORDERS: LocalStorageValue(ORDERS, abi.make(abi.DynamicArray[abi.Uint64])),
     }
 
+    @Subroutine(TealType.uint64)
+    def increase_sequence(self):
+        return Seq(
+            (s := ScratchVar()).store(self.Global[SEQUENCE].get()),
+            self.Global[SEQUENCE].set(s.load() + Int(1)),
+            s.load()
+        )
+
 
 vex = Vex()
 
+
+oc = OnCompleteActions().set_action(
+    Approve(), OnComplete.NoOp, create=True
+).set_action(
+    Return(Txn.sender() == Global.creator_address()),
+    OnComplete.UpdateApplication
+).set_action(
+   Return(Txn.sender() == Global.creator_address()),
+   OnComplete.DeleteApplication,
+).set_action(
+    Reject(), OnComplete.OptIn
+).set_action(
+    Reject(), OnComplete.ClearState
+).set_action(
+    Reject(), OnComplete.CloseOut
+)
+
 order_doofus = Doofus("orders", RestingOrder())
 
-router = Router()
-router.add_bare_call(Approve(), OnComplete.NoOp, creation=True)
-router.add_bare_call(
-    Return(Txn.sender() == Global.creator_address()),
-    [OnComplete.UpdateApplication, OnComplete.DeleteApplication],
-)
-router.add_bare_call(
-    Reject(), [OnComplete.OptIn, OnComplete.ClearState, OnComplete.CloseOut]
-)
+router = Router("vex", oc)
 
-
-@router.add_method_handler
-@ABIReturnSubroutine
+@router.abi_method()
 def boostrap():
     return Seq(
+        # 
         order_doofus.initialize(),
         # Init global vars
         vex.init_globals(),
     )
 
-
 IncomingOrderType = IncomingOrder().get_type()
 
 
-@router.add_method_handler
-@ABIReturnSubroutine
+@router.abi_method()
 def new_order(order: IncomingOrderType, *, output: abi.Uint16):
     return Seq(
         (io := IncomingOrder()).decode(order.encode()),
@@ -96,8 +112,7 @@ def new_order(order: IncomingOrderType, *, output: abi.Uint16):
         output.set(new_slot),
     )
 
-@router.add_method_handler
-@ABIReturnSubroutine
+@router.abi_method()
 def read_order(slot: abi.Uint16, *, output: RestingOrderType):
     return output.decode(order_doofus.read(slot))
 
