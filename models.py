@@ -271,3 +271,14 @@ class Doofus:
                 t.encode(),
             ),
         )
+
+    def read(self, slot: abi.Uint16)->Expr:
+        return Seq(
+            (page := abi.Uint8()).decode(Extract(slot.encode(), Int(0), Int(1))),
+            (idx := abi.Uint8()).decode(Extract(slot.encode(), Int(1), Int(1))),
+            BoxExtract(
+                self.page_name(page.encode()),
+                Int(self.encoded_size) * idx.get(),
+                Int(self.encoded_size) * (idx.get()+Int(1))
+            ),
+        )

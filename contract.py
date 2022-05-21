@@ -76,7 +76,7 @@ IncomingOrderType = IncomingOrder().get_type()
 
 @router.add_method_handler
 @ABIReturnSubroutine
-def new_order(order: IncomingOrderType, *, output: abi.String):
+def new_order(order: IncomingOrderType, *, output: abi.Uint16):
     return Seq(
         (io := IncomingOrder()).decode(order.encode()),
         (last_slot := abi.Uint16()).decode(vex.Global[BOTTOM_BID_PTR].get()),
@@ -93,8 +93,13 @@ def new_order(order: IncomingOrderType, *, output: abi.String):
         ),
         (new_slot := abi.Uint16()).decode(order_doofus.reserve_slot()),
         order_doofus.write(new_slot, ro),
-        output.set("ok"),
+        output.set(new_slot),
     )
+
+@router.add_method_handler
+@ABIReturnSubroutine
+def read_order(slot: abi.Uint16, *, output: RestingOrderType):
+    return output.decode(order_doofus.read(slot))
 
 
 if __name__ == "__main__":

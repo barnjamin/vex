@@ -90,8 +90,27 @@ def call_new_order(app_id: int):
 
     result = atc.execute(client, 2)
     for res in result.abi_results:
-        print(res.__dict__)
+        print(f"Stored order in slot: {res.return_value}")
 
+def call_read_order(app_id: int):
+    meth = get_method("read_order")
+
+
+    slot = 0
+    obox = base64.b64decode("b3JkZXJzAA==").decode("utf-8")
+    boxes = [BoxReference(0, obox), BoxReference(0, "orders-pages")]
+
+    sp = client.suggested_params()
+    atc = AtomicTransactionComposer()
+    atc.add_method_call(app_id, meth, addr, sp, signer, [slot], boxes=boxes)
+
+    # result = atc.dryrun(client)
+    # for res in result.trace.txns:
+    #    print(res.app_trace(StackPrinterConfig(max_value_width=0)))
+
+    result = atc.execute(client, 2)
+    for res in result.abi_results:
+        print(f"Order at slot {slot}: {res.return_value}")
 
 if __name__ == "__main__":
     app_id, app_addr = create()
@@ -99,5 +118,6 @@ if __name__ == "__main__":
     call_bootstrap(app_id)
     print("Calling new order")
     call_new_order(app_id)
+    call_read_order(app_id)
     #print("Deleting app")
     #delete(app_id)
