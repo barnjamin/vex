@@ -1,1 +1,1 @@
-{"name": "Contract", "methods": [{"name": "boostrap", "args": [], "returns": {"type": "void"}}, {"name": "get_orderbook", "args": [], "returns": {"type": "(uint64,uint64,uint64,uint8)"}}, {"name": "new_order", "args": [{"type": "(bool,uint64,uint64,address)"}], "returns": {"type": "string"}}], "desc": null, "networks": {}}
+{"name": "Contract", "methods": [{"name": "boostrap", "args": [], "returns": {"type": "void"}}, {"name": "new_order", "args": [{"type": "(bool,uint64,uint64)"}], "returns": {"type": "string"}}], "desc": null, "networks": {}}

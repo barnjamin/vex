@@ -2,6 +2,7 @@ from algosdk import *
 from algosdk.v2client import algod
 from algosdk.future.transaction import *
 from algosdk.atomic_transaction_composer import *
+from algosdk.dryrun_results import *
 from pyteal import Mode, OptimizeOptions, compileTeal
 from deploy import *
 from contract import router
@@ -61,28 +62,42 @@ def delete(app_id: int):
 def call_bootstrap(app_id: int):
     meth = get_method("boostrap")
 
+    boxes = [BoxReference(0, "orders-pages")]
+
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
-    atc.add_method_call(app_id, meth, addr, sp, signer, [])
+    atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
     result = atc.execute(client, 2)
     for res in result.abi_results:
         print(res.__dict__)
 
 
 def call_new_order(app_id: int):
-    meth = get_method("order")
+    meth = get_method("new_order")
+
+    new_order = (True, 100, 500)
+
+    obox = base64.b64decode("b3JkZXJzAA==").decode("utf-8")
+    boxes = [BoxReference(0, obox), BoxReference(0, "orders-pages")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
-    atc.add_method_call(app_id, meth, addr, sp, signer, [])
-    result = atc.execute(client, 2)
+    atc.add_method_call(app_id, meth, addr, sp, signer, [new_order], boxes=boxes)
 
+    # result = atc.dryrun(client)
+    # for res in result.trace.txns:
+    #    print(res.app_trace(StackPrinterConfig(max_value_width=0)))
+
+    result = atc.execute(client, 2)
     for res in result.abi_results:
         print(res.__dict__)
 
 
 if __name__ == "__main__":
     app_id, app_addr = create()
+    print("Calling bootstrap")
     call_bootstrap(app_id)
+    print("Calling new order")
     call_new_order(app_id)
-    delete(app_id)
+    #print("Deleting app")
+    #delete(app_id)

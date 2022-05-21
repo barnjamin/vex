@@ -69,7 +69,7 @@ def create_app(
     clear_bytes = base64.b64decode(clear_result["result"])
 
     # We dont need no stinkin storage
-    gschema = StateSchema(4, 0)
+    gschema = StateSchema(0, 64)
     lschema = StateSchema(0, 0)
 
     # Create the transaction
@@ -98,7 +98,7 @@ def create_app(
 
     # Send some Algos to the app address so it can do stuff
     sp = client.suggested_params()
-    ptxn = PaymentTxn(addr, sp, app_addr, int(5e6))
+    ptxn = PaymentTxn(addr, sp, app_addr, int(5e8))
     txid = client.send_transaction(ptxn.sign(sk))
     print("Payment sent, waiting for confirmation")
     wait_for_confirmation(client, txid, 4)

@@ -1,6 +1,6 @@
 #pragma version 7
-intcblock 0 1 4 2
-bytecblock 0x151f7c75 0x6f626d 0x6f6262 0x6f6261 0x6f6264
+intcblock 0 1 2
+bytecblock 0x626f74746f6d5f6269645f707472 0x6f6b
 txn ApplicationID
 intc_0 // 0
 ==
@@ -10,27 +10,27 @@ txn OnCompletion
 intc_0 // NoOp
 ==
 &&
-bnz main_l12
+bnz main_l10
 intc_1 // 1
 txn OnCompletion
-intc_2 // UpdateApplication
+pushint 4 // UpdateApplication
 ==
 txn OnCompletion
 pushint 5 // DeleteApplication
 ==
 ||
 &&
-bnz main_l11
+bnz main_l9
 intc_1 // 1
 txn OnCompletion
 intc_1 // OptIn
 ==
 txn OnCompletion
-intc_3 // CloseOut
+intc_2 // CloseOut
 ==
 ||
 &&
-bnz main_l10
+bnz main_l8
 txna ApplicationArgs 0
 pushbytes 0x8ec49881 // "boostrap()void"
 ==
@@ -42,134 +42,167 @@ txn OnCompletion
 intc_0 // NoOp
 ==
 &&
-bnz main_l9
-txna ApplicationArgs 0
-pushbytes 0x161aef51 // "get_orderbook()(uint64,uint64,uint64,uint8)"
-==
-txn NumAppArgs
-intc_1 // 1
-==
-&&
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l8
-txna ApplicationArgs 0
-pushbytes 0x574e80c3 // "new_order((bool,uint64,uint64,address))string"
-==
-txn NumAppArgs
-intc_3 // 2
-==
-&&
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
 bnz main_l7
+txna ApplicationArgs 0
+pushbytes 0x58266ee0 // "new_order((bool,uint64,uint64))string"
+==
+txn NumAppArgs
+intc_2 // 2
+==
+&&
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l6
 err
-main_l7:
+main_l6:
 txna ApplicationArgs 1
-callsub neworder_4
-store 1
-bytec_0 // 0x151F7C75
-load 1
-concat
-log
-intc_1 // 1
-return
-main_l8:
-callsub getorderbook_3
+callsub neworder_1
 store 0
-bytec_0 // 0x151F7C75
+pushbytes 0x151f7c75 // 0x151F7C75
 load 0
 concat
 log
 intc_1 // 1
 return
-main_l9:
-callsub boostrap_2
+main_l7:
+callsub boostrap_0
 intc_1 // 1
 return
-main_l10:
+main_l8:
 intc_0 // 0
 return
-main_l11:
+main_l9:
 txn Sender
 global CreatorAddress
 ==
 return
-main_l12:
+main_l10:
 intc_1 // 1
 return
 
-// init_orderbook
-initorderbook_0:
-bytec_1 // "obm"
-intc_0 // 0
-app_global_put
-bytec_2 // "obb"
-intc_0 // 0
-app_global_put
-bytec_3 // "oba"
-intc_0 // 0
-app_global_put
-bytec 4 // "obd"
-intc_2 // 4
-app_global_put
-retsub
-
-// read_orderbook
-readorderbook_1:
-bytec_1 // "obm"
-app_global_get
-store 3
-bytec_2 // "obb"
-app_global_get
-store 4
-bytec_3 // "oba"
-app_global_get
-store 5
-bytec 4 // "obd"
-app_global_get
-store 6
-load 6
-pushint 256 // 256
-<
-assert
-load 3
-itob
-load 5
-itob
-concat
-load 4
-itob
-concat
-pushbytes 0x00 // 0x00
-intc_0 // 0
-load 6
-setbyte
-concat
-retsub
-
 // boostrap
-boostrap_2:
-callsub initorderbook_0
-retsub
-
-// get_orderbook
-getorderbook_3:
-callsub readorderbook_1
+boostrap_0:
+pushbytes 0x61737365745f61 // "asset_a"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x61737365745f62 // "asset_b"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x6d785f70675f7072696365 // "mx_pg_price"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x705f646563696d616c73 // "p_decimals"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x6d785f776474685f6d6b74 // "mx_wdth_mkt"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x6d6e5f737a // "mn_sz"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x626964 // "bid"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x61736b // "ask"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x6d6964 // "mid"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x746f705f6269645f707472 // "top_bid_ptr"
+intc_0 // 0
+itob
+app_global_put
+bytec_0 // "bottom_bid_ptr"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x746f705f61736b5f707472 // "top_ask_ptr"
+intc_0 // 0
+itob
+app_global_put
+pushbytes 0x626f74746f6d5f61736b5f707472 // "bottom_ask_ptr"
+intc_0 // 0
+itob
+app_global_put
 retsub
 
 // new_order
-neworder_4:
-extract 17 0
+neworder_1:
+store 1
+bytec_0 // "bottom_bid_ptr"
+app_global_get
+intc_0 // 0
+extract_uint16
 store 2
+txna Accounts 0
+store 3
+load 1
+pushint 9 // 9
+extract_uint64
+store 4
+intc_0 // 0
+store 5
+intc_0 // 0
+store 6
+load 3
+load 4
+itob
+concat
+load 6
+itob
+concat
 load 2
+itob
+extract 6 0
+concat
+load 5
+itob
+extract 6 0
+concat
+store 7
+load 2
+itob
+extract 6 0
+extract 0 1
+intc_0 // 0
+getbyte
+store 8
+load 2
+itob
+extract 6 0
+intc_1 // 1
+intc_0 // 0
+extract3
+intc_0 // 0
+getbyte
+store 9
+pushbytes 0x6f7264657273 // "orders"
+pushbytes 0x00 // 0x00
+intc_0 // 0
+load 8
+setbyte
+concat
+pushint 52 // 52
+load 9
+*
+load 7
+box_replace
+bytec_1 // "ok"
 len
 itob
 extract 6 0
-load 2
+bytec_1 // "ok"
 concat
 retsub
