@@ -1,4 +1,5 @@
 Sparse Array Storage:
+
     T: Known Type
     N: Known size of T  `abi.size_of(T)`
     MaxElems: Max elements per Box `floor(floor(MAX_BOX/N)/8)*8`. So we can use a `byte[]` for indicies 
@@ -32,10 +33,10 @@ Sparse Array Storage:
         mark_unoccupied(slot)
 
 
-    Tracking interesting slots is up to the application
+Tracking interesting slots is up to the application
 
-    ex:
-        FIFO queue as double linked list to allow deletion, head/tail and higher/lower pointers are slots to elements
+ex:
+    FIFO queue as double linked list to allow deletion, head/tail and higher/lower pointers are slots to elements
 
 
 
