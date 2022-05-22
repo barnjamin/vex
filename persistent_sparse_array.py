@@ -15,8 +15,6 @@ BOX_BYTES = 400
 
 PageIndicies = abi.StaticArray[abi.Uint8, Literal[32]]
 
-
-
 # Pages represents up to N pages of orders,
 # each page has an address (32 byte array)
 # each index for each page has an associated bit

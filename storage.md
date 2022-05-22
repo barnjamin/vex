@@ -1,18 +1,3 @@
-Q:
-
-Is it reasonable to set a max number of elements per Price Queue ? 
-Is it reasonable to set a min size of order? max decimals?
-
-
-Per Box 2500
-Per Byte 400
-
-
-Limits
-    Max 8 Boxes per app call (?)
-    All Boxes to be accessed must be specified from off chain txn 
-
-
 Sparse Array Storage:
     T: Known Type
     N: Known size of T  `abi.size_of(T)`
@@ -28,16 +13,48 @@ Sparse Array Storage:
 
     Page: T[MaxElems] 
 
-    write(T):
-        Find first open slot (iterate over page bitmaps, bitlen for first index, should prefer lower index boxes && indicies)
-        Flip index bit
-        BoxReplace(T.encode()) into page/index
+    put(T):
+        slot = Find first open slot (iterate over page bitmaps, bitlen for first index, should prefer lower index boxes && indicies)
+        mark_occupied(slot)
+        [page, index] = slot
+        BoxReplace(page, index*N, T.encode()) into page/index
+        return slot
 
-    read:
-        given slot, find [page, index]
-        T.decode(BoxExtract)
+    update(slot, T):
+        [page, index] = slot
+        BoxReplace(page, index*N, T.encode())
+
+    read(slot):
+        [page, index] = slot 
+        T.decode(BoxExtract(page, index*N, (index+1)*N))
+
+    delete(slot):
+        mark_unoccupied(slot)
+
 
     Tracking interesting slots is up to the application
+
+    ex:
+        FIFO queue as double linked list to allow deletion, head/tail and higher/lower pointers are slots to elements
+
+
+
+
+
+############################
+
+
+Is it reasonable to set a max number of elements per Price Queue ? 
+Is it reasonable to set a min size of order? max decimals?
+
+
+Per Box 2500
+Per Byte 400
+
+
+Limits
+    Max 8 Boxes per app call (?)
+    All Boxes to be accessed must be specified from off chain txn 
 
 
 
