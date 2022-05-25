@@ -50,7 +50,7 @@ intc_0 // NoOp
 &&
 bnz main_l17
 txna ApplicationArgs 0
-pushbytes 0x1f85d42d // "new_order((uint64,uint64))string"
+pushbytes 0x374d570d // "new_order((uint64,uint64))(uint64,uint64)"
 ==
 txn OnCompletion
 intc_0 // NoOp
@@ -276,14 +276,6 @@ load 1
 callsub pqinsert_2
 bytec_0 // "book"
 intc_0 // 0
-intc_1 // 1
+pushint 16 // 16
 box_extract
-len
-itob
-extract 6 0
-bytec_0 // "book"
-intc_0 // 0
-intc_1 // 1
-box_extract
-concat
 retsub

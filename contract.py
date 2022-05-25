@@ -56,10 +56,12 @@ def new_order(order: OrderType, *, output: OrderType):
 
         # Doesn't work? logic eval error: stack finished with bytes not int. Details: pc=448, opcodes=
         (sv := ScratchVar()).store(read_first()),
+        #(sv := ScratchVar()).store(pq.peek()),
 
         output.decode(sv.load())
     )
 
+@Subroutine(TealType.bytes)
 def read_first():
     return BoxExtract(Bytes("book"), Int(0), Int(16))
 
