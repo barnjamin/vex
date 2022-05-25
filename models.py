@@ -67,11 +67,11 @@ class IncomingOrder(NamedTuple):
 
 
 class RestingOrder(NamedTuple):
-    address: abi.Address
-    size: Size
-    sequence: Sequence
-    higher: Slot
-    lower: Slot
+    address: abi.Address # 32
+    size: abi.Uint64     # 8 
+    price: abi.Uint64    # 8
+    sequence: abi.Uint64 # 8
+                         # 56
 
 
 class CancelOrder(NamedTuple):

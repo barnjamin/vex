@@ -1,4 +1,4 @@
-XEV - eXchange Expected Value
+VEX - Value Exchange
 ---
 
 On chain order book with order price time order matching
@@ -22,6 +22,3 @@ This design should:
 
 
 Reset seq/priority on move toward mid and increase size
-
-
-Allow BATCH operations

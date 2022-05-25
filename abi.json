@@ -1,1 +1,0 @@
-{"name": "Contract", "methods": [{"name": "boostrap", "args": [], "returns": {"type": "void"}}, {"name": "new_order", "args": [{"type": "(bool,uint64,uint64)"}], "returns": {"type": "string"}}], "desc": null, "networks": {}}

@@ -1,5 +1,5 @@
 from pyteal import *
-from application import *
+from tmp.application import *
 
 ASSET_A = "asset_a"
 ASSET_B = "asset_b"
