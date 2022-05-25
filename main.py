@@ -1,3 +1,4 @@
+from webbrowser import get
 from algosdk import *
 from algosdk.v2client import algod
 from algosdk.future.transaction import *
@@ -67,43 +68,43 @@ def call_bootstrap(app_id: int):
     atc.execute(client, 2)
 
 
-def call_new_order(app_id: int):
+def call_new_order(app_id: int, price: int):
     meth = get_method("new_order")
 
-    new_order = (True, 100, 500)
+    new_order = (price, 500)
     boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [new_order], boxes=boxes)
-
-    # result = atc.dryrun(client)
-    # for res in result.trace.txns:
-    #    print(res.app_trace(StackPrinterConfig(max_value_width=0)))
-
-    result = atc.execute(client, 2)
-    for res in result.abi_results:
-        print(res.__dict__)
-        print(f"Stored order in slot: '{res.raw_value}'")
+    atc.execute(client, 2)
 
 
-def call_read_root(app_id: int):
-    meth = get_method("read_root")
+def call_peek_root(app_id: int):
+    meth = get_method("peek_root")
     boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
 
-    #result = atc.dryrun(client)
-    #for res in result.trace.txns:
-    #   print(res.app_trace(StackPrinterConfig(max_value_width=0)))
+    result = atc.execute(client, 2)
+    for res in result.abi_results:
+        print(f"Order at root: {res.return_value}")
 
+
+def call_fill_root(app_id: int):
+    meth = get_method("fill_root")
+    boxes = [BoxReference(0, "book")]
+
+    sp = client.suggested_params()
+    atc = AtomicTransactionComposer()
+    atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
 
     result = atc.execute(client, 2)
     for res in result.abi_results:
-        print(res.__dict__)
-        print(f"Order at root: {res.return_value}")
+        if res.return_value is not None:
+            print(f"Popped root: {res.return_value}")
 
 
 if __name__ == "__main__":
@@ -111,6 +112,16 @@ if __name__ == "__main__":
     print("Calling bootstrap")
     call_bootstrap(app_id)
     print("Calling new order")
-    call_new_order(app_id)
-    #call_read_root(app_id)
+    call_new_order(app_id, 10)
+    call_new_order(app_id, 5)
+    call_new_order(app_id, 8)
+    call_new_order(app_id, 5)
+    call_new_order(app_id, 3)
+
+    call_fill_root(app_id)
+    call_fill_root(app_id)
+    call_fill_root(app_id)
+    call_fill_root(app_id)
+    call_fill_root(app_id)
+
     # delete(app_id)

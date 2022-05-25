@@ -35,53 +35,71 @@ def bootstrap():
 
 router.add_method_handler(bootstrap)
 
-class Order(NamedTuple):
+
+class IncomingOrder(NamedTuple):
     price: abi.Uint64
     size: abi.Uint64
 
 
-OrderType = Order().get_type()
+IncomingOrderType = IncomingOrder().get_type()
 
-pq = PriorityQueue(book_key, box_size, OrderType)
+
+class RestingOrder(NamedTuple):
+    price: abi.Uint64
+    sequence: abi.Uint64
+    size: abi.Uint64
+
+
+RestingOrderType = RestingOrder().get_type()
+
+pq = PriorityQueue(book_key, box_size, RestingOrderType)
+
+
+@Subroutine(TealType.uint64)
+def assign_sequence():
+    return Seq(
+        (sv := ScratchVar()).store(App.globalGet(seq_key)),
+        App.globalPut(seq_key, sv.load() + Int(1)),
+        sv.load(),
+    )
+
 
 @ABIReturnSubroutine
-def new_order(order: OrderType, *, output: OrderType):
+def new_order(order: IncomingOrderType):
     return Seq(
-        pq.insert(order),
-
-        # Works
-        #(sv := ScratchVar()).store(BoxExtract(Bytes("book"), Int(0), Int(16))),
-        # Also works
-        #(sv := ScratchVar()).store(get_first()),
-
-        # Doesn't work? logic eval error: stack finished with bytes not int. Details: pc=448, opcodes=
-        (sv := ScratchVar()).store(read_first()),
-        #(sv := ScratchVar()).store(pq.peek()),
-
-        output.decode(sv.load())
+        (io := IncomingOrder()).decode(order.encode()),
+        (p := abi.Uint64()).set(io.price()),
+        (s := abi.Uint64()).set(io.size()),
+        (seq := abi.Uint64()).set(assign_sequence()),
+        (resting_order := abi.make(RestingOrderType)).set(p, seq, s),
+        pq.insert(resting_order),
     )
 
-@Subroutine(TealType.bytes)
-def read_first():
-    return BoxExtract(Bytes("book"), Int(0), Int(16))
-
-@Subroutine(TealType.bytes)
-def get_first():
-    return Seq(
-        (p := abi.Uint64()).set(100),
-        (s := abi.Uint64()).set(1),
-        (o := Order()).set(p, s),
-        o.encode()
-    )
 
 router.add_method_handler(new_order)
 
-#@ABIReturnSubroutine
-#def read_root():
-#    return Seq(
-#        Log(Itob(pq.peek()))
-#    )
-#router.add_method_handler(read_root)
+
+@ABIReturnSubroutine
+def peek_root(*, output: RestingOrderType):
+    return output.decode(pq.peek())
+
+
+router.add_method_handler(peek_root)
+
+
+@ABIReturnSubroutine
+def fill_root(*, output: RestingOrderType):
+    return output.decode(pq.pop())
+
+
+
+router.add_method_handler(fill_root)
+
+@ABIReturnSubroutine
+def noop():
+    return Seq() 
+router.add_method_handler(noop)
+
 
 if __name__ == "__main__":
     import os

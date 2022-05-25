@@ -185,6 +185,7 @@ retsub
 // pq_read
 pqread_4:
 box_extract
+retsub
 
 // sort_key
 sortkey_5:
@@ -283,3 +284,4 @@ bytec_0 // "book"
 intc_0 // 0
 pushint 16 // 16
 box_extract
+retsub
