@@ -1,0 +1,15 @@
+#pragma version 7
+intcblock 0
+txn ApplicationID
+intc_0 // 0
+==
+bnz main_l4
+pushint 1 // 1
+bnz main_l3
+err
+main_l3:
+intc_0 // 0
+return
+main_l4:
+intc_0 // 0
+return

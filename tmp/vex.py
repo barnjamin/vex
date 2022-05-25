@@ -37,7 +37,7 @@ class Vex(AppState):
         BOTTOM_BID_PTR: GlobalStorageValue(BOTTOM_BID_PTR, abi.Uint64()),
         TOP_ASK_PTR: GlobalStorageValue(TOP_ASK_PTR, abi.Uint64()),
         BOTTOM_ASK_PTR: GlobalStorageValue(BOTTOM_ASK_PTR, abi.Uint64()),
-        SEQUENCE: GlobalStorageValue(SEQUENCE, abi.Uint64())
+        SEQUENCE: GlobalStorageValue(SEQUENCE, abi.Uint64()),
     }
 
     Local: Dict[str, LocalStorageValue] = {
@@ -51,6 +51,5 @@ class Vex(AppState):
         return Seq(
             (s := ScratchVar()).store(self.Global[SEQUENCE].get()),
             self.Global[SEQUENCE].set(s.load() + Int(1)),
-            s.load()
+            s.load(),
         )
-

@@ -69,7 +69,7 @@ def create_app(
     clear_bytes = base64.b64decode(clear_result["result"])
 
     # We dont need no stinkin storage
-    gschema = StateSchema(0, 64)
+    gschema = StateSchema(2, 0)
     lschema = StateSchema(0, 0)
 
     # Create the transaction

@@ -1,6 +1,7 @@
 from typing import Dict, Union
 from pyteal import *
 
+
 class GlobalStorageValue:
 
     key: str

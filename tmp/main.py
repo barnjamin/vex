@@ -13,7 +13,7 @@ token = "a" * 64
 client = algod.AlgodClient(token, host)
 
 accts = get_sandbox_accounts()
-addr, sk = accts[-1]
+addr, sk = accts[0]
 signer = AccountTransactionSigner(sk)
 
 approval, clear, iface = router.build_program()
@@ -57,21 +57,25 @@ def delete(app_id: int):
 
 
 def call_bootstrap(app_id: int):
-    meth = get_method("bootstrap")
+    meth = get_method("boostrap")
 
-    boxes = [BoxReference(0, "book")]
+    boxes = [BoxReference(0, "orders-pages")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
-    atc.execute(client, 2)
+    result = atc.execute(client, 2)
+    for res in result.abi_results:
+        print(res.__dict__)
 
 
 def call_new_order(app_id: int):
     meth = get_method("new_order")
 
     new_order = (True, 100, 500)
-    boxes = [BoxReference(0, "book")]
+
+    obox = base64.b64decode("b3JkZXJzAA==").decode("utf-8")
+    boxes = [BoxReference(0, obox), BoxReference(0, "orders-pages")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
@@ -83,27 +87,27 @@ def call_new_order(app_id: int):
 
     result = atc.execute(client, 2)
     for res in result.abi_results:
-        print(res.__dict__)
-        print(f"Stored order in slot: '{res.raw_value}'")
+        print(f"Stored order in slot: {res.return_value}")
 
 
-def call_read_root(app_id: int):
-    meth = get_method("read_root")
-    boxes = [BoxReference(0, "book")]
+def call_read_order(app_id: int):
+    meth = get_method("read_order")
+
+    slot = 0
+    obox = base64.b64decode("b3JkZXJzAA==").decode("utf-8")
+    boxes = [BoxReference(0, obox), BoxReference(0, "orders-pages")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
-    atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
+    atc.add_method_call(app_id, meth, addr, sp, signer, [slot], boxes=boxes)
 
-    #result = atc.dryrun(client)
-    #for res in result.trace.txns:
-    #   print(res.app_trace(StackPrinterConfig(max_value_width=0)))
-
+    # result = atc.dryrun(client)
+    # for res in result.trace.txns:
+    #    print(res.app_trace(StackPrinterConfig(max_value_width=0)))
 
     result = atc.execute(client, 2)
     for res in result.abi_results:
-        print(res.__dict__)
-        print(f"Order at root: {res.return_value}")
+        print(f"Order at slot {slot}: {res.return_value}")
 
 
 if __name__ == "__main__":
@@ -112,5 +116,6 @@ if __name__ == "__main__":
     call_bootstrap(app_id)
     print("Calling new order")
     call_new_order(app_id)
-    #call_read_root(app_id)
+    call_read_order(app_id)
+    # print("Deleting app")
     # delete(app_id)

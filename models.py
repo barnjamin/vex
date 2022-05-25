@@ -1,4 +1,4 @@
-from typing import  Callable
+from typing import Callable
 from pyteal import *
 
 # First byte is which page
@@ -43,23 +43,6 @@ class OrderBook(NamedTuple):
     sequence: abi.Uint64
 
 
-class OrderQueue(NamedTuple):
-    """
-    OrderQueue Holds pointers to both sides of the
-    order book queue for a given price
-    """
-
-    # Pointer to first element in Queue
-    # Used to find first order to fill
-    head: Slot
-
-    # Pointer to last element in queue
-    # Used to append new orders
-    tail: Slot
-
-    num_pages: abi.Uint64
-
-
 class IncomingOrder(NamedTuple):
     bid_side: abi.Bool
     price: Price
@@ -67,11 +50,10 @@ class IncomingOrder(NamedTuple):
 
 
 class RestingOrder(NamedTuple):
-    address: abi.Address # 32
-    size: abi.Uint64     # 8 
-    price: abi.Uint64    # 8
-    sequence: abi.Uint64 # 8
-                         # 56
+    address: abi.Address  # 32
+    size: abi.Uint64  # 8
+    price: abi.Uint64  # 8
+    sequence: abi.Uint64  # 8
 
 
 class CancelOrder(NamedTuple):
@@ -86,11 +68,3 @@ class ModifyOrderSize(NamedTuple):
     slot: Slot
     current_size: Size
     new_size: Size
-
-
-IncomingOrderType = IncomingOrder().get_type()
-OrderBookType = OrderBook().get_type()
-OrderQueueType = OrderQueue().get_type()
-RestingOrderType = RestingOrder().get_type()
-ModifyOrderSizeType = ModifyOrderSize().get_type()
-CancelOrderType = CancelOrder().get_type()

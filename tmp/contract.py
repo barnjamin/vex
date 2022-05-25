@@ -5,21 +5,19 @@ from persistent_sparse_array import *
 from vex import *
 
 
-
-oc = OnCompleteActions().set_action(
-    Approve(), OnComplete.NoOp, create=True
-).set_action(
-    Return(Txn.sender() == Global.creator_address()),
-    OnComplete.UpdateApplication
-).set_action(
-   Return(Txn.sender() == Global.creator_address()),
-   OnComplete.DeleteApplication,
-).set_action(
-    Reject(), OnComplete.OptIn
-).set_action(
-    Reject(), OnComplete.ClearState
-).set_action(
-    Reject(), OnComplete.CloseOut
+oc = (
+    OnCompleteActions()
+    .set_action(Approve(), OnComplete.NoOp, create=True)
+    .set_action(
+        Return(Txn.sender() == Global.creator_address()), OnComplete.UpdateApplication
+    )
+    .set_action(
+        Return(Txn.sender() == Global.creator_address()),
+        OnComplete.DeleteApplication,
+    )
+    .set_action(Reject(), OnComplete.OptIn)
+    .set_action(Reject(), OnComplete.ClearState)
+    .set_action(Reject(), OnComplete.CloseOut)
 )
 
 order_doofus = Doofus("orders", RestingOrder())
@@ -28,14 +26,16 @@ router = Router("vex", oc)
 
 vex = Vex()
 
+
 @router.abi_method()
 def boostrap():
     return Seq(
-        # 
+        #
         order_doofus.initialize(),
         # Init global vars
         vex.init_globals(),
     )
+
 
 IncomingOrderType = IncomingOrder().get_type()
 
@@ -60,6 +60,7 @@ def new_order(order: IncomingOrderType, *, output: abi.Uint16):
         order_doofus.write(new_slot, ro),
         output.set(new_slot),
     )
+
 
 @router.abi_method()
 def read_order(slot: abi.Uint16, *, output: RestingOrderType):

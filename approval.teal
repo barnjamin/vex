@@ -1,0 +1,289 @@
+#pragma version 7
+intcblock 0 1 2 5
+bytecblock 0x626f6f6b 0x72657374696e675f6f7264657273
+txn ApplicationID
+intc_0 // 0
+==
+txn OnCompletion
+intc_2 // CloseOut
+==
+&&
+bnz main_l22
+txn ApplicationID
+intc_0 // 0
+==
+txn OnCompletion
+intc_3 // DeleteApplication
+==
+&&
+bnz main_l21
+txn ApplicationID
+intc_0 // 0
+==
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l20
+txn ApplicationID
+intc_0 // 0
+==
+txn OnCompletion
+intc_1 // OptIn
+==
+&&
+bnz main_l19
+txn ApplicationID
+intc_0 // 0
+==
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+&&
+bnz main_l18
+txna ApplicationArgs 0
+pushbytes 0xbec76d87 // "bootstrap()void"
+==
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l17
+txna ApplicationArgs 0
+pushbytes 0x1f85d42d // "new_order((uint64,uint64))string"
+==
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l16
+txn OnCompletion
+intc_2 // CloseOut
+==
+bnz main_l15
+txn OnCompletion
+intc_3 // DeleteApplication
+==
+bnz main_l14
+txn OnCompletion
+intc_1 // OptIn
+==
+bnz main_l13
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+bnz main_l12
+err
+main_l12:
+txn Sender
+global CreatorAddress
+==
+return
+main_l13:
+intc_0 // 0
+return
+main_l14:
+txn Sender
+global CreatorAddress
+==
+return
+main_l15:
+intc_0 // 0
+return
+main_l16:
+txna ApplicationArgs 1
+callsub neworder_8
+store 0
+pushbytes 0x151f7c75 // 0x151F7C75
+load 0
+concat
+log
+intc_1 // 1
+return
+main_l17:
+callsub bootstrap_7
+intc_1 // 1
+return
+main_l18:
+txn Sender
+global CreatorAddress
+==
+return
+main_l19:
+intc_0 // 0
+return
+main_l20:
+intc_1 // 1
+return
+main_l21:
+txn Sender
+global CreatorAddress
+==
+return
+main_l22:
+intc_0 // 0
+return
+
+// pq_count
+pqcount_0:
+bytec_1 // "resting_orders"
+app_global_get
+retsub
+
+// pq_count_incr
+pqcountincr_1:
+bytec_1 // "resting_orders"
+callsub pqcount_0
+intc_1 // 1
++
+app_global_put
+retsub
+
+// pq_insert
+pqinsert_2:
+store 4
+store 3
+store 2
+load 2
+load 3
+load 4
+box_replace
+load 2
+load 3
+load 4
+len
+callsub pqupheap_6
+callsub pqcountincr_1
+retsub
+
+// pq_swap
+pqswap_3:
+store 15
+store 14
+store 13
+store 12
+load 12
+load 13
+load 15
+box_extract
+store 16
+load 12
+load 14
+load 15
+box_extract
+store 17
+load 12
+load 14
+load 16
+box_replace
+load 12
+load 13
+load 17
+box_replace
+retsub
+
+// pq_read
+pqread_4:
+box_extract
+
+// sort_key
+sortkey_5:
+store 18
+intc_0 // 0
+retsub
+
+// pq_upheap
+pqupheap_6:
+store 7
+store 6
+store 5
+load 6
+intc_0 // 0
+!=
+bz pqupheap_6_l9
+load 6
+store 8
+pqupheap_6_l2:
+load 8
+intc_0 // 0
+>
+bz pqupheap_6_l9
+load 5
+load 6
+load 7
+callsub pqread_4
+store 9
+load 8
+intc_2 // 2
+%
+intc_0 // 0
+==
+bnz pqupheap_6_l8
+load 8
+pqupheap_6_l5:
+intc_2 // 2
+/
+store 10
+load 5
+load 10
+load 7
+callsub pqread_4
+store 11
+load 9
+callsub sortkey_5
+load 11
+callsub sortkey_5
+<
+bnz pqupheap_6_l7
+intc_0 // 0
+store 8
+b pqupheap_6_l2
+pqupheap_6_l7:
+load 5
+load 8
+load 10
+load 7
+callsub pqswap_3
+load 10
+store 8
+b pqupheap_6_l2
+pqupheap_6_l8:
+load 8
+intc_1 // 1
+-
+b pqupheap_6_l5
+pqupheap_6_l9:
+retsub
+
+// bootstrap
+bootstrap_7:
+pushint 16384 // 16384
+bytec_0 // "book"
+box_create
+pushbytes 0x73657175656e6365 // "sequence"
+intc_0 // 0
+app_global_put
+retsub
+
+// new_order
+neworder_8:
+store 1
+bytec_0 // "book"
+callsub pqcount_0
+pushint 16 // 16
+*
+load 1
+callsub pqinsert_2
+bytec_0 // "book"
+intc_0 // 0
+intc_1 // 1
+box_extract
+len
+itob
+extract 6 0
+bytec_0 // "book"
+intc_0 // 0
+intc_1 // 1
+box_extract
+concat
+retsub
