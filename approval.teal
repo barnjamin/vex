@@ -274,8 +274,12 @@ pushint 16 // 16
 *
 load 1
 callsub pqinsert_2
+callsub readfirst_9
+retsub
+
+// read_first
+readfirst_9:
 bytec_0 // "book"
 intc_0 // 0
 pushint 16 // 16
 box_extract
-retsub
