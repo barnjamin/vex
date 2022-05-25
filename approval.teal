@@ -1,6 +1,6 @@
 #pragma version 7
 intcblock 0 1 2 5
-bytecblock 0x626f6f6b 0x72657374696e675f6f7264657273
+bytecblock 0x626f6f6b 0x72657374696e675f6f7264657273 0x73657175656e6365 0x151f7c75
 txn ApplicationID
 intc_0 // 0
 ==
@@ -8,7 +8,7 @@ txn OnCompletion
 intc_2 // CloseOut
 ==
 &&
-bnz main_l22
+bnz main_l28
 txn ApplicationID
 intc_0 // 0
 ==
@@ -16,7 +16,7 @@ txn OnCompletion
 intc_3 // DeleteApplication
 ==
 &&
-bnz main_l21
+bnz main_l27
 txn ApplicationID
 intc_0 // 0
 ==
@@ -24,7 +24,7 @@ txn OnCompletion
 intc_0 // NoOp
 ==
 &&
-bnz main_l20
+bnz main_l26
 txn ApplicationID
 intc_0 // 0
 ==
@@ -32,7 +32,7 @@ txn OnCompletion
 intc_1 // OptIn
 ==
 &&
-bnz main_l19
+bnz main_l25
 txn ApplicationID
 intc_0 // 0
 ==
@@ -40,7 +40,7 @@ txn OnCompletion
 pushint 4 // UpdateApplication
 ==
 &&
-bnz main_l18
+bnz main_l24
 txna ApplicationArgs 0
 pushbytes 0xbec76d87 // "bootstrap()void"
 ==
@@ -48,79 +48,120 @@ txn OnCompletion
 intc_0 // NoOp
 ==
 &&
-bnz main_l17
+bnz main_l23
 txna ApplicationArgs 0
-pushbytes 0x374d570d // "new_order((uint64,uint64))(uint64,uint64)"
+pushbytes 0xe8270d09 // "new_order((uint64,uint64))void"
 ==
 txn OnCompletion
 intc_0 // NoOp
 ==
 &&
-bnz main_l16
+bnz main_l22
+txna ApplicationArgs 0
+pushbytes 0x309c9ba0 // "peek_root()(uint64,uint64,uint64)"
+==
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l21
+txna ApplicationArgs 0
+pushbytes 0xdc05ebb9 // "fill_root()(uint64,uint64,uint64)"
+==
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l20
+txna ApplicationArgs 0
+pushbytes 0xe83a87ab // "noop()void"
+==
+txn OnCompletion
+intc_0 // NoOp
+==
+&&
+bnz main_l19
 txn OnCompletion
 intc_2 // CloseOut
 ==
-bnz main_l15
+bnz main_l18
 txn OnCompletion
 intc_3 // DeleteApplication
 ==
-bnz main_l14
+bnz main_l17
 txn OnCompletion
 intc_1 // OptIn
 ==
-bnz main_l13
+bnz main_l16
 txn OnCompletion
 pushint 4 // UpdateApplication
 ==
-bnz main_l12
+bnz main_l15
 err
-main_l12:
-txn Sender
-global CreatorAddress
-==
-return
-main_l13:
-intc_0 // 0
-return
-main_l14:
-txn Sender
-global CreatorAddress
-==
-return
 main_l15:
-intc_0 // 0
+txn Sender
+global CreatorAddress
+==
 return
 main_l16:
-txna ApplicationArgs 1
-callsub neworder_8
+intc_0 // 0
+return
+main_l17:
+txn Sender
+global CreatorAddress
+==
+return
+main_l18:
+intc_0 // 0
+return
+main_l19:
+callsub noop_16
+intc_1 // 1
+return
+main_l20:
+callsub fillroot_15
+store 1
+bytec_3 // 0x151F7C75
+load 1
+concat
+log
+intc_1 // 1
+return
+main_l21:
+callsub peekroot_14
 store 0
-pushbytes 0x151f7c75 // 0x151F7C75
+bytec_3 // 0x151F7C75
 load 0
 concat
 log
 intc_1 // 1
 return
-main_l17:
-callsub bootstrap_7
+main_l22:
+txna ApplicationArgs 1
+callsub neworder_13
 intc_1 // 1
 return
-main_l18:
+main_l23:
+callsub bootstrap_11
+intc_1 // 1
+return
+main_l24:
 txn Sender
 global CreatorAddress
 ==
 return
-main_l19:
+main_l25:
 intc_0 // 0
 return
-main_l20:
+main_l26:
 intc_1 // 1
 return
-main_l21:
+main_l27:
 txn Sender
 global CreatorAddress
 ==
 return
-main_l22:
+main_l28:
 intc_0 // 0
 return
 
@@ -139,149 +180,331 @@ intc_1 // 1
 app_global_put
 retsub
 
+// pq_count_decr
+pqcountdecr_2:
+bytec_1 // "resting_orders"
+callsub pqcount_0
+intc_1 // 1
+-
+app_global_put
+retsub
+
 // pq_insert
-pqinsert_2:
-store 4
-store 3
-store 2
-load 2
-load 3
-load 4
-box_replace
-load 2
-load 3
-load 4
+pqinsert_3:
+store 9
+store 8
+store 7
+load 7
+load 8
+load 9
+callsub pqwrite_6
+load 7
+load 8
+load 9
 len
-callsub pqupheap_6
+callsub pqupheap_9
 callsub pqcountincr_1
 retsub
 
 // pq_swap
-pqswap_3:
-store 15
-store 14
-store 13
-store 12
-load 12
-load 13
-load 15
+pqswap_4:
+store 21
+store 20
+store 19
+store 18
+load 18
+load 19
+load 21
+callsub pqread_7
+store 22
+load 18
+load 20
+load 21
+callsub pqread_7
+store 23
+load 18
+load 20
+load 22
+callsub pqwrite_6
+load 18
+load 19
+load 23
+callsub pqwrite_6
+retsub
+
+// pq_pop
+pqpop_5:
+store 28
+store 27
+load 27
+intc_0 // 0
+load 28
 box_extract
-store 16
-load 12
-load 14
-load 15
-box_extract
-store 17
-load 12
-load 14
-load 16
-box_replace
-load 12
-load 13
-load 17
+store 29
+callsub pqcountdecr_2
+load 27
+intc_0 // 0
+callsub pqcount_0
+load 28
+callsub pqswap_4
+load 27
+intc_0 // 0
+load 28
+callsub pqdownheap_10
+load 29
+retsub
+
+// pq_write
+pqwrite_6:
+store 10
+load 10
+len
+*
+load 10
 box_replace
 retsub
 
 // pq_read
-pqread_4:
+pqread_7:
+store 24
+load 24
+*
+load 24
 box_extract
 retsub
 
-// sort_key
-sortkey_5:
-store 18
-intc_0 // 0
+// sorted_lt
+sortedlt_8:
+store 25
+extract 0 16
+load 25
+extract 0 16
+b<
 retsub
 
 // pq_upheap
-pqupheap_6:
-store 7
-store 6
-store 5
-load 6
+pqupheap_9:
+store 13
+store 12
+store 11
+load 12
 intc_0 // 0
 !=
-bz pqupheap_6_l9
-load 6
-store 8
-pqupheap_6_l2:
-load 8
+bz pqupheap_9_l9
+load 12
+store 14
+pqupheap_9_l2:
+load 14
 intc_0 // 0
 >
-bz pqupheap_6_l9
-load 5
-load 6
-load 7
-callsub pqread_4
-store 9
-load 8
+bz pqupheap_9_l9
+load 11
+load 14
+load 13
+callsub pqread_7
+store 15
+load 14
 intc_2 // 2
 %
 intc_0 // 0
 ==
-bnz pqupheap_6_l8
-load 8
-pqupheap_6_l5:
+bnz pqupheap_9_l8
+load 14
+pqupheap_9_l5:
 intc_2 // 2
 /
-store 10
-load 5
-load 10
-load 7
-callsub pqread_4
-store 11
-load 9
-callsub sortkey_5
+store 16
 load 11
-callsub sortkey_5
-<
-bnz pqupheap_6_l7
+load 16
+load 13
+callsub pqread_7
+store 17
+load 15
+load 17
+callsub sortedlt_8
+bnz pqupheap_9_l7
 intc_0 // 0
-store 8
-b pqupheap_6_l2
-pqupheap_6_l7:
-load 5
-load 8
-load 10
-load 7
-callsub pqswap_3
-load 10
-store 8
-b pqupheap_6_l2
-pqupheap_6_l8:
-load 8
+store 14
+b pqupheap_9_l2
+pqupheap_9_l7:
+load 11
+load 14
+load 16
+load 13
+callsub pqswap_4
+load 16
+store 14
+b pqupheap_9_l2
+pqupheap_9_l8:
+load 14
 intc_1 // 1
 -
-b pqupheap_6_l5
-pqupheap_6_l9:
+b pqupheap_9_l5
+pqupheap_9_l9:
+retsub
+
+// pq_downheap
+pqdownheap_10:
+store 32
+store 31
+store 30
+load 31
+store 33
+intc_1 // 1
+store 34
+pqdownheap_10_l1:
+load 34
+bz pqdownheap_10_l15
+load 33
+store 35
+load 30
+load 35
+load 32
+callsub pqread_7
+store 36
+load 35
+intc_2 // 2
+*
+store 37
+load 37
+callsub pqcount_0
+<
+bnz pqdownheap_10_l14
+load 32
+bzero
+b~
+pqdownheap_10_l4:
+store 38
+load 36
+load 38
+callsub sortedlt_8
+!
+bnz pqdownheap_10_l13
+pqdownheap_10_l5:
+load 35
+intc_2 // 2
+*
+intc_1 // 1
++
+store 39
+load 39
+callsub pqcount_0
+<
+bnz pqdownheap_10_l12
+load 32
+bzero
+b~
+pqdownheap_10_l7:
+store 40
+load 36
+load 40
+callsub sortedlt_8
+!
+bnz pqdownheap_10_l11
+pqdownheap_10_l8:
+load 33
+load 35
+!=
+bnz pqdownheap_10_l10
+intc_0 // 0
+store 34
+b pqdownheap_10_l1
+pqdownheap_10_l10:
+load 30
+load 35
+load 33
+load 32
+callsub pqswap_4
+b pqdownheap_10_l1
+pqdownheap_10_l11:
+load 39
+store 33
+b pqdownheap_10_l8
+pqdownheap_10_l12:
+load 30
+load 39
+load 32
+callsub pqread_7
+b pqdownheap_10_l7
+pqdownheap_10_l13:
+load 37
+store 33
+b pqdownheap_10_l5
+pqdownheap_10_l14:
+load 30
+load 37
+load 32
+callsub pqread_7
+b pqdownheap_10_l4
+pqdownheap_10_l15:
 retsub
 
 // bootstrap
-bootstrap_7:
+bootstrap_11:
 pushint 16384 // 16384
 bytec_0 // "book"
 box_create
-pushbytes 0x73657175656e6365 // "sequence"
+bytec_2 // "sequence"
 intc_0 // 0
 app_global_put
 retsub
 
-// new_order
-neworder_8:
-store 1
-bytec_0 // "book"
-callsub pqcount_0
-pushint 16 // 16
-*
-load 1
-callsub pqinsert_2
-callsub readfirst_9
+// assign_sequence
+assignsequence_12:
+bytec_2 // "sequence"
+app_global_get
+store 26
+bytec_2 // "sequence"
+load 26
+intc_1 // 1
++
+app_global_put
+load 26
 retsub
 
-// read_first
-readfirst_9:
+// new_order
+neworder_13:
+store 2
+load 2
+intc_0 // 0
+extract_uint64
+store 3
+load 2
+pushint 8 // 8
+extract_uint64
+store 4
+callsub assignsequence_12
+store 5
+load 3
+itob
+load 5
+itob
+concat
+load 4
+itob
+concat
+store 6
+bytec_0 // "book"
+callsub pqcount_0
+load 6
+callsub pqinsert_3
+retsub
+
+// peek_root
+peekroot_14:
 bytec_0 // "book"
 intc_0 // 0
-pushint 16 // 16
-box_extract
+pushint 24 // 24
+callsub pqread_7
+retsub
+
+// fill_root
+fillroot_15:
+bytec_0 // "book"
+pushint 24 // 24
+callsub pqpop_5
+retsub
+
+// noop
+noop_16:
 retsub
