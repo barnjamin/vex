@@ -2,6 +2,8 @@ from pyteal import *
 
 resting_orders_key = Bytes("resting_orders")
 ou = OpUp(OpUpMode.OnCall)
+
+
 class PriorityQueue:
     def __init__(
         self, box_name: Bytes, box_size: Int, lt: Int, type_spec: abi.TypeSpec
@@ -181,8 +183,6 @@ def pq_search(key, val):
 
 
 # pq Heap invariant restoring operations
-
-
 @Subroutine(TealType.none)
 def pq_upheap(key, idx, len, sort_lt):
     """pq_upheap restores the heap invariant property starting from a given index up the heap
@@ -193,9 +193,7 @@ def pq_upheap(key, idx, len, sort_lt):
         Seq(
             ou.ensure_budget(Int(200)),
             (smallest := ScratchVar()).store(idx),
-            (curr_val := ScratchVar()).store(
-                pq_read(key, smallest.load(), len)
-            ),
+            (curr_val := ScratchVar()).store(pq_read(key, smallest.load(), len)),
             (p_pos := ScratchVar()).store(parent_idx(smallest.load())),
             (p_val := ScratchVar()).store(pq_read(key, p_pos.load(), len)),
             If(
@@ -209,8 +207,6 @@ def pq_upheap(key, idx, len, sort_lt):
     )
 
 
-
-
 @Subroutine(TealType.none)
 def pq_downheap(key, idx, len, sort_lt):
     """pq_downheap restores the heap invariant property starting from a given index down the heap
@@ -218,7 +214,7 @@ def pq_downheap(key, idx, len, sort_lt):
     we preferr to swap the right element if both are larger
     """
     return If(
-        idx<pq_count(), 
+        idx < pq_count(),
         Seq(
             ou.ensure_budget(Int(200)),
             (curr_idx := ScratchVar()).store(idx),
@@ -254,8 +250,8 @@ def pq_downheap(key, idx, len, sort_lt):
                 curr_idx.load() != idx,
                 Seq(
                     pq_swap(key, idx, curr_idx.load(), len),
-                    pq_downheap(key, curr_idx.load(), len, sort_lt)
-                )
+                    pq_downheap(key, curr_idx.load(), len, sort_lt),
+                ),
             ),
-        )
+        ),
     )
