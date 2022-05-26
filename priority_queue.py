@@ -11,27 +11,35 @@ class PriorityQueue:
         self.type_size = Int(abi.size_of(self.type_spec))
 
     def count(self) -> Expr:
+        """count returns the number of elements in the priority queue"""
         return pq_count()
 
     def insert(self, thing: abi.BaseType) -> Expr:
-        return pq_insert(self.box_name, pq_count(), thing.encode())
+        """insert adds a new element in sorted order"""
+        return pq_insert(self.box_name, thing.encode())
 
     def delete(self, thing: abi.BaseType) -> Expr:
+        """delete removes a given element by finding it in the pq then removing it by index"""
         return Seq((idx := abi.Uint64()).set(self.search(thing)), self.remove(idx))
 
     def peek(self) -> Expr:
+        """peak reads the root element but doesn't modify the pq"""
         return pq_read(self.box_name, Int(0), self.type_size)
 
     def pop(self) -> Expr:
+        """pop removes the first element from the pq and returns it after resorting the pq"""
         return pq_pop(self.box_name, self.type_size)
 
     def remove(self, idx: abi.Uint64) -> Expr:
+        """remove removes an element by its index"""
         return pq_remove(self.box_name, idx.get(), self.type_size)
 
     def get(self, idx: abi.Uint64) -> Expr:
+        """get returns an element at a given index"""
         return pq_read(self.box_name, idx.get(), self.type_size)
 
     def search(self, thing: abi.BaseType) -> Expr:
+        """search tries to find the element in the pq"""
         return pq_search(self.box_name, thing.encode())
 
 
@@ -76,16 +84,26 @@ def pq_zero(key, idx, len):
 
 ## pq operations
 @Subroutine(TealType.none)
-def pq_insert(key, idx, val):
-    return Seq(pq_write(key, idx, val), pq_upheap(key, idx, Len(val)), pq_count_incr())
+def pq_insert(key, val):
+    return Seq(
+        # Write the first element in the last spot
+        pq_write(key, pq_count(), val),
+        # Restore heap invariant starting with the last element
+        pq_upheap(key, pq_count(), Len(val)),
+        # Increment the counter
+        pq_count_incr(),
+    )
 
 
 @Subroutine(TealType.none)
 def pq_swap(key, aidx, bidx, len):
     return Seq(
+        # Store a and b in scratch
         (a := ScratchVar()).store(pq_read(key, aidx, len)),
         (b := ScratchVar()).store(pq_read(key, bidx, len)),
+        # Write b to a index
         pq_write(key, bidx, a.load()),
+        # Write a to b index
         pq_write(key, aidx, b.load()),
     )
 
@@ -93,11 +111,17 @@ def pq_swap(key, aidx, bidx, len):
 @Subroutine(TealType.bytes)
 def pq_pop(key, len):
     return Seq(
+        # Read the top element
         (top := ScratchVar()).store(BoxExtract(key, Int(0), len)),
+        # Decrement the counter so we have the right last element
         pq_count_decr(),
+        # Swap last for first
         pq_swap(key, Int(0), pq_count(), len),
+        # Restore heap property
         pq_downheap(key, Int(0), len),
+        # Zero out bytes for the last one
         pq_zero(key, pq_count(), len),
+        # Return the top element
         top.load(),
     )
 
@@ -105,9 +129,13 @@ def pq_pop(key, len):
 @Subroutine(TealType.none)
 def pq_remove(key, idx, len):
     return Seq(
+        # Decrement the counter
         pq_count_decr(),
+        # Swap the index to remove for last
         pq_swap(key, idx, pq_count(), len),
+        # Restore heap invariant
         pq_downheap(key, idx, len),
+        # Zero out bytes for the last one (the one we're removing)
         pq_zero(key, pq_count(), len),
     )
 
@@ -135,6 +163,9 @@ def sorted_lt(a, b) -> Expr:
 
 @Subroutine(TealType.none)
 def pq_upheap(key, idx, len):
+    """pq_upheap restores the heap invariant property starting from a given index up the heap
+    by comparing the child with its parent, if needed, we swap the items and check again
+    """
     return If(
         idx != Int(0),
         Seq(
@@ -162,6 +193,10 @@ def pq_upheap(key, idx, len):
 
 @Subroutine(TealType.none)
 def pq_downheap(key, idx, len):
+    """pq_downheap restores the heap invariant property starting from a given index down the heap
+    by comparing a parent with its children, if one or the other is larger we swap the items and check again
+    we preferr to swap the right element if both are larger
+    """
     return Seq(
         (largest := ScratchVar()).store(idx),
         (sorted := ScratchVar()).store(Int(1)),
