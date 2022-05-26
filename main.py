@@ -62,10 +62,7 @@ def call_new_order(app_id: int, price: int, size: int):
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [(price, size)], boxes=boxes)
-    result = atc.execute(client, 2)
-    for txr in result.abi_results:
-        if "logs" in txr.tx_info:
-            print([base64.b64decode(l) for l in txr.tx_info["logs"]])
+    atc.execute(client, 2)
 
 
 def call_peek_root(app_id: int):
@@ -89,10 +86,6 @@ def call_fill_root(app_id: int):
 
     result = atc.execute(client, 2)
     for res in result.abi_results:
-
-        if "logs" in res.tx_info:
-            print([base64.b64decode(l) for l in res.tx_info["logs"]])
-
         if res.return_value is not None:
             print(f"Popped root: {res.return_value}")
 
@@ -131,13 +124,9 @@ if __name__ == "__main__":
     call_bootstrap(app_id)
     print("Calling new order")
 
-    order_cnt = 5 
+    order_cnt = 500
     for idx in range(order_cnt):
-        # call_new_order(app_id, random.randint(100, 200), random.randint(1, 10) * 100)
-        call_new_order(app_id, order_cnt - idx, 100)
-
-    for idx in range(order_cnt):
-        print(call_read_order(app_id, idx))
+        call_new_order(app_id, random.randint(100, 200), random.randint(1, 10) * 100)
 
     for idx in range(order_cnt):
         call_fill_root(app_id)

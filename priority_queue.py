@@ -158,7 +158,6 @@ def pq_remove(key, idx, len, sort):
 @Subroutine(TealType.none)
 def pq_swap(key, aidx, bidx, len):
     return Seq(
-        Log(Concat(Bytes("Swapping "), Itob(aidx), Bytes(" "), Itob(bidx))),
         # Store a and b in scratch
         (a := ScratchVar()).store(pq_read(key, aidx, len)),
         (b := ScratchVar()).store(pq_read(key, bidx, len)),
@@ -230,7 +229,10 @@ def pq_downheap(key, idx, len, sort_lt):
                     unsorted(
                         pq_read(key, left_idx.load(), len), curr_val.load(), sort_lt
                     ),
-                    curr_idx.store(left_idx.load()),
+                    Seq(
+                        curr_idx.store(left_idx.load()),
+                        curr_val.store(pq_read(key, curr_idx.load(), len)),
+                    ),
                 ),
             ),
             # Check the right side second
