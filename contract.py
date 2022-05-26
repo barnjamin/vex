@@ -1,19 +1,20 @@
 from pyteal import *
 
-from models import NamedTuple
+from models import *
 from priority_queue import PriorityQueue
 
 
 kb = 2 ** 10
-box_size = Int(16 * kb)
+box_size = Int(32 * kb)
 
 seq_key = Bytes("sequence")
 book_key = Bytes("book")
 
+pq = PriorityQueue(book_key, box_size, RestingOrderType)
 
 router = Router(
     "vex",
-    OnCompleteActions(
+    BareCallActions(
         no_op=OnCompleteAction.create_only(Approve()),
         update_application=OnCompleteAction.always(
             Return(Txn.sender() == Global.creator_address())
@@ -34,25 +35,6 @@ def bootstrap():
 
 
 router.add_method_handler(bootstrap)
-
-
-class IncomingOrder(NamedTuple):
-    price: abi.Uint64
-    size: abi.Uint64
-
-
-IncomingOrderType = IncomingOrder().get_type()
-
-
-class RestingOrder(NamedTuple):
-    price: abi.Uint64
-    sequence: abi.Uint64
-    size: abi.Uint64
-
-
-RestingOrderType = RestingOrder().get_type()
-
-pq = PriorityQueue(book_key, box_size, RestingOrderType)
 
 
 @Subroutine(TealType.uint64)
@@ -76,15 +58,9 @@ def new_order(order: IncomingOrderType):
     )
 
 
-router.add_method_handler(new_order)
-
-
 @ABIReturnSubroutine
 def peek_root(*, output: RestingOrderType):
     return output.decode(pq.peek())
-
-
-router.add_method_handler(peek_root)
 
 
 @ABIReturnSubroutine
@@ -92,15 +68,9 @@ def fill_root(*, output: RestingOrderType):
     return output.decode(pq.pop())
 
 
-router.add_method_handler(fill_root)
-
-
 @ABIReturnSubroutine
 def read_order(idx: abi.Uint64, *, output: RestingOrderType):
     return output.decode(pq.get(idx))
-
-
-router.add_method_handler(read_order)
 
 
 @ABIReturnSubroutine
@@ -108,6 +78,10 @@ def cancel_order(ro: RestingOrderType):
     return pq.delete(ro)
 
 
+router.add_method_handler(new_order)
+router.add_method_handler(peek_root)
+router.add_method_handler(fill_root)
+router.add_method_handler(read_order)
 router.add_method_handler(cancel_order)
 
 if __name__ == "__main__":

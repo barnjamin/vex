@@ -56,15 +56,14 @@ def call_bootstrap(app_id: int):
     atc.execute(client, 2)
 
 
-def call_new_order(app_id: int, price: int):
+def call_new_order(app_id: int, price: int, size: int):
     meth = get_method("new_order")
 
-    new_order = (price, 500)
     boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
-    atc.add_method_call(app_id, meth, addr, sp, signer, [new_order], boxes=boxes)
+    atc.add_method_call(app_id, meth, addr, sp, signer, [(price, size)], boxes=boxes)
     atc.execute(client, 2)
 
 
@@ -123,34 +122,15 @@ def call_read_order(app_id: int, order_idx: int):
 
 
 if __name__ == "__main__":
+    import random
+
     app_id, app_addr = create()
     print("Calling bootstrap")
+
     call_bootstrap(app_id)
     print("Calling new order")
-    call_new_order(app_id, 10)
-    call_new_order(app_id, 5)
-    call_new_order(app_id, 8)
-    call_new_order(app_id, 5)
-    call_new_order(app_id, 3)
 
-    # print(call_read_order(app_id, 0))
-    # print(call_read_order(app_id, 1))
-    # print(call_read_order(app_id, 2))
-    # print(call_read_order(app_id, 3))
-
-    for idx in range(5):
-        print(call_read_order(app_id, idx))
-
-    call_cancel_order(app_id, 2)
-    print("")
-
-    for idx in range(5):
-        print(call_read_order(app_id, idx))
-
-    # call_fill_root(app_id)
-    # call_fill_root(app_id)
-    # call_fill_root(app_id)
-    # call_fill_root(app_id)
-    # call_fill_root(app_id)
+    for idx in range(500):
+        call_new_order(app_id, random.randint(100, 200), random.randint(1, 10) * 100)
 
     # delete(app_id)

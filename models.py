@@ -1,16 +1,6 @@
 from typing import Callable
 from pyteal import *
 
-# First byte is which page
-# Second byte is index into that page
-Slot = abi.Uint16
-Page = abi.Uint8
-Idx = abi.Uint8
-
-Price = abi.Uint64
-Size = abi.Uint64
-Sequence = abi.Uint64
-
 
 class NamedTuple(abi.Tuple):
     def __init__(self):
@@ -33,28 +23,31 @@ class NamedTuple(abi.Tuple):
         return super().type_spec().__str__()
 
 
+# TODO: add address
 class RestingOrder(NamedTuple):
-    address: abi.Address  # 32
-    size: abi.Uint64  # 8
-    price: abi.Uint64  # 8
-    sequence: abi.Uint64  # 8
+    size: abi.Uint64
+    price: abi.Uint64
+    sequence: abi.Uint64
 
 
-class OrderNew(NamedTuple):
-    bid_side: abi.Bool
-    price: Price
-    size: Size
+class IncomingOrder(NamedTuple):
+    price: abi.Uint64
+    size: abi.Uint64
 
 
-class OrderCancel(NamedTuple):
-    price: Price
+class IncomingOrderCancel(NamedTuple):
+    price: abi.Uint64
     address: abi.Address
-    slot: Slot
 
 
-class OrderChangeSize(NamedTuple):
-    price: Price
+class IncomingOrderChangeSize(NamedTuple):
+    price: abi.Uint64
     address: abi.Address
-    slot: Slot
-    current_size: Size
-    new_size: Size
+    current_size: abi.Uint64
+    new_size: abi.Uint64
+
+
+RestingOrderType = RestingOrder().get_type()
+IncomingOrderType = IncomingOrder().get_type()
+IncomingOrderCancelType = IncomingOrderCancel().get_type()
+IncomingOrderChangeSizeType = IncomingOrderChangeSize().get_type()
