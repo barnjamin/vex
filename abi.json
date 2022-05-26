@@ -2,10 +2,10 @@
   "name": "vex",
   "methods": [
     {
-      "name": "peek_root",
+      "name": "bootstrap",
       "args": [],
       "returns": {
-        "type": "(uint64,uint64,uint64)"
+        "type": "void"
       }
     },
     {
@@ -20,6 +20,13 @@
       }
     },
     {
+      "name": "peek_root",
+      "args": [],
+      "returns": {
+        "type": "(uint64,uint64,uint64)"
+      }
+    },
+    {
       "name": "fill_root",
       "args": [],
       "returns": {
@@ -27,15 +34,23 @@
       }
     },
     {
-      "name": "bootstrap",
-      "args": [],
+      "name": "read_order",
+      "args": [
+        {
+          "type": "uint64"
+        }
+      ],
       "returns": {
-        "type": "void"
+        "type": "(uint64,uint64,uint64)"
       }
     },
     {
-      "name": "noop",
-      "args": [],
+      "name": "cancel_order",
+      "args": [
+        {
+          "type": "(uint64,uint64,uint64)"
+        }
+      ],
       "returns": {
         "type": "void"
       }

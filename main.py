@@ -23,6 +23,8 @@ approval, clear, iface = router.compile_program(
     optimize=OptimizeOptions(scratch_slots=True),
 )
 
+boxes = [BoxReference(0, "ask_book"), BoxReference(0, "bid_book")]
+
 
 def get_method(name: str) -> abi.Method:
     for m in iface.methods:
@@ -48,8 +50,6 @@ def delete(app_id: int):
 def call_bootstrap(app_id: int):
     meth = get_method("bootstrap")
 
-    boxes = [BoxReference(0, "book")]
-
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
@@ -59,8 +59,6 @@ def call_bootstrap(app_id: int):
 def call_new_order(app_id: int, price: int, size: int):
     meth = get_method("new_order")
 
-    boxes = [BoxReference(0, "book")]
-
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [(price, size)], boxes=boxes)
@@ -69,7 +67,6 @@ def call_new_order(app_id: int, price: int, size: int):
 
 def call_peek_root(app_id: int):
     meth = get_method("peek_root")
-    boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
@@ -82,7 +79,6 @@ def call_peek_root(app_id: int):
 
 def call_fill_root(app_id: int):
     meth = get_method("fill_root")
-    boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
@@ -99,7 +95,6 @@ def call_cancel_order(app_id: int, order_idx: int):
     resting_order = call_read_order(app_id, order_idx)
 
     meth = get_method("cancel_order")
-    boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
@@ -109,7 +104,6 @@ def call_cancel_order(app_id: int, order_idx: int):
 
 def call_read_order(app_id: int, order_idx: int):
     meth = get_method("read_order")
-    boxes = [BoxReference(0, "book")]
 
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
@@ -130,7 +124,9 @@ if __name__ == "__main__":
     call_bootstrap(app_id)
     print("Calling new order")
 
-    for idx in range(500):
+    order_cnt = 5
+    for idx in range(order_cnt):
         call_new_order(app_id, random.randint(100, 200), random.randint(1, 10) * 100)
 
-    # delete(app_id)
+    for idx in range(order_cnt):
+        call_fill_root(app_id)

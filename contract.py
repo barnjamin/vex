@@ -8,9 +8,14 @@ kb = 2 ** 10
 box_size = Int(32 * kb)
 
 seq_key = Bytes("sequence")
-book_key = Bytes("book")
+ask_book_key = Bytes("ask_book")
+bid_book_key = Bytes("bid_book")
 
-pq = PriorityQueue(book_key, box_size, RestingOrderType)
+ASK_SORT = Int(1)
+BID_SORT = Int(0)
+
+ask_pq = PriorityQueue(ask_book_key, box_size, ASK_SORT, RestingOrderType)
+bid_pq = PriorityQueue(bid_book_key, box_size, ASK_SORT, RestingOrderType)
 
 router = Router(
     "vex",
@@ -31,7 +36,11 @@ router = Router(
 
 @ABIReturnSubroutine
 def bootstrap():
-    return Seq(BoxCreate(book_key, box_size), App.globalPut(seq_key, Int(0)))
+    return Seq(
+        BoxCreate(ask_book_key, box_size),
+        BoxCreate(bid_book_key, box_size),
+        App.globalPut(seq_key, Int(0)),
+    )
 
 
 router.add_method_handler(bootstrap)
@@ -54,28 +63,28 @@ def new_order(order: IncomingOrderType):
         (s := abi.Uint64()).set(io.size()),
         (seq := abi.Uint64()).set(assign_sequence()),
         (resting_order := abi.make(RestingOrderType)).set(p, seq, s),
-        pq.insert(resting_order),
+        bid_pq.insert(resting_order),
     )
 
 
 @ABIReturnSubroutine
 def peek_root(*, output: RestingOrderType):
-    return output.decode(pq.peek())
+    return output.decode(bid_pq.peek())
 
 
 @ABIReturnSubroutine
 def fill_root(*, output: RestingOrderType):
-    return output.decode(pq.pop())
+    return output.decode(bid_pq.pop())
 
 
 @ABIReturnSubroutine
 def read_order(idx: abi.Uint64, *, output: RestingOrderType):
-    return output.decode(pq.get(idx))
+    return output.decode(bid_pq.get(idx))
 
 
 @ABIReturnSubroutine
 def cancel_order(ro: RestingOrderType):
-    return pq.delete(ro)
+    return bid_pq.delete(ro)
 
 
 router.add_method_handler(new_order)
