@@ -4,7 +4,7 @@ from algosdk.v2client import algod
 from algosdk.future.transaction import *
 from algosdk.atomic_transaction_composer import *
 from algosdk.dryrun_results import *
-from pyteal import Mode, OptimizeOptions, compileTeal
+from pyteal import OptimizeOptions, compileTeal
 from deploy import *
 from contract import router
 
@@ -17,23 +17,13 @@ accts = get_sandbox_accounts()
 addr, sk = accts[-1]
 signer = AccountTransactionSigner(sk)
 
-approval, clear, iface = router.build_program()
+approval, clear, iface = router.compile_program(
+    version=7,
+    assembleConstants=True,
+    optimize=OptimizeOptions(scratch_slots=True),
+)
 
 iface = abi.Interface.undictify(iface)
-approval = compileTeal(
-    approval,
-    mode=Mode.Application,
-    version=7,
-    assembleConstants=True,
-    optimize=OptimizeOptions(scratch_slots=True),
-)
-clear = compileTeal(
-    clear,
-    mode=Mode.Application,
-    version=7,
-    assembleConstants=True,
-    optimize=OptimizeOptions(scratch_slots=True),
-)
 
 
 def get_method(name: str) -> abi.Method:

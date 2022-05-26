@@ -111,7 +111,6 @@ def pq_downheap(key, idx, len):
             Seq(
                 (curr_idx := ScratchVar()).store(largest.load()),
                 (curr_val := ScratchVar()).store(pq_read(key, curr_idx.load(), len)),
-
                 # Check the left side first
                 (left_idx := ScratchVar()).store(child_idx_left(curr_idx.load())),
                 (left_val := ScratchVar()).store(
@@ -125,8 +124,7 @@ def pq_downheap(key, idx, len):
                     Not(sorted_lt(curr_val.load(), left_val.load())),
                     largest.store(left_idx.load()),
                 ),
-
-                # Check the right side second 
+                # Check the right side second
                 (right_idx := ScratchVar()).store(child_idx_right(curr_idx.load())),
                 (right_val := ScratchVar()).store(
                     If(
@@ -139,12 +137,11 @@ def pq_downheap(key, idx, len):
                     Not(sorted_lt(curr_val.load(), right_val.load())),
                     largest.store(right_idx.load()),
                 ),
-
-                # If largest is now different than current swap them and start over 
+                # If largest is now different than current swap them and start over
                 If(
                     largest.load() != curr_idx.load(),
                     pq_swap(key, curr_idx.load(), largest.load(), len),
-                    sorted.store(Int(0))
+                    sorted.store(Int(0)),
                 ),
             )
         ),

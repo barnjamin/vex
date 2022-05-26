@@ -33,22 +33,6 @@ class NamedTuple(abi.Tuple):
         return super().type_spec().__str__()
 
 
-class OrderBook(NamedTuple):
-    """ """
-
-    mid_price: Price
-    ask_price: Price
-    bid_price: Price
-    decimals: abi.Uint8
-    sequence: abi.Uint64
-
-
-class IncomingOrder(NamedTuple):
-    bid_side: abi.Bool
-    price: Price
-    size: Size
-
-
 class RestingOrder(NamedTuple):
     address: abi.Address  # 32
     size: abi.Uint64  # 8
@@ -56,13 +40,19 @@ class RestingOrder(NamedTuple):
     sequence: abi.Uint64  # 8
 
 
-class CancelOrder(NamedTuple):
+class OrderNew(NamedTuple):
+    bid_side: abi.Bool
+    price: Price
+    size: Size
+
+
+class OrderCancel(NamedTuple):
     price: Price
     address: abi.Address
     slot: Slot
 
 
-class ModifyOrderSize(NamedTuple):
+class OrderChangeSize(NamedTuple):
     price: Price
     address: abi.Address
     slot: Slot

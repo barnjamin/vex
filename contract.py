@@ -92,12 +92,14 @@ def fill_root(*, output: RestingOrderType):
     return output.decode(pq.pop())
 
 
-
 router.add_method_handler(fill_root)
+
 
 @ABIReturnSubroutine
 def noop():
-    return Seq() 
+    return Seq()
+
+
 router.add_method_handler(noop)
 
 
@@ -107,29 +109,17 @@ if __name__ == "__main__":
 
     path = os.path.dirname(os.path.abspath(__file__))
 
-    approval, clear, spec = router.build_program()
+    approval, clear, spec = router.compile_program(
+        version=7,
+        assembleConstants=True,
+        optimize=OptimizeOptions(scratch_slots=True),
+    )
 
     with open(os.path.join(path, "abi.json"), "w") as f:
         f.write(json.dumps(spec))
 
     with open(os.path.join(path, "approval.teal"), "w") as f:
-        f.write(
-            compileTeal(
-                approval,
-                mode=Mode.Application,
-                version=7,
-                assembleConstants=True,
-                optimize=OptimizeOptions(scratch_slots=True),
-            )
-        )
+        f.write(approval)
 
     with open(os.path.join(path, "clear.teal"), "w") as f:
-        f.write(
-            compileTeal(
-                clear,
-                mode=Mode.Application,
-                version=7,
-                assembleConstants=True,
-                optimize=OptimizeOptions(scratch_slots=True),
-            )
-        )
+        f.write(clear)
