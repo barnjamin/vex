@@ -62,15 +62,15 @@ def pq_count_decr():
 
 # pq idx helpers
 def child_idx_left(pos) -> Expr:
-    return pos * Int(2)
-
-
-def child_idx_right(pos) -> Expr:
     return (pos * Int(2)) + Int(1)
 
 
+def child_idx_right(pos) -> Expr:
+    return (pos * Int(2)) + Int(2)
+
+
 def parent_idx(pos) -> Expr:
-    return If(pos % Int(2) == Int(0), (pos - Int(1)), pos) / Int(2)
+    return If(pos % Int(2) == Int(0), pos - Int(2), pos - Int(1)) / Int(2)
 
 
 #### pq read/writes
@@ -128,7 +128,7 @@ def pq_pop(key, len, sort):
     return Seq(
         # Read the top element
         (top := ScratchVar()).store(BoxExtract(key, Int(0), len)),
-        # Decrement the counter so we have the right last element
+        # Decrement the counter so we have the correct last element
         pq_count_decr(),
         # Swap last for first
         pq_swap(key, Int(0), pq_count(), len),
@@ -158,6 +158,7 @@ def pq_remove(key, idx, len, sort):
 @Subroutine(TealType.none)
 def pq_swap(key, aidx, bidx, len):
     return Seq(
+        Log(Concat(Bytes("Swapping "), Itob(aidx), Bytes(" "), Itob(bidx))),
         # Store a and b in scratch
         (a := ScratchVar()).store(pq_read(key, aidx, len)),
         (b := ScratchVar()).store(pq_read(key, bidx, len)),
@@ -191,15 +192,16 @@ def pq_upheap(key, idx, len, sort_lt):
     return If(
         idx != Int(0),
         Seq(
-            ou.ensure_budget(Int(200)),
-            (smallest := ScratchVar()).store(idx),
-            (curr_val := ScratchVar()).store(pq_read(key, smallest.load(), len)),
-            (p_pos := ScratchVar()).store(parent_idx(smallest.load())),
-            (p_val := ScratchVar()).store(pq_read(key, p_pos.load(), len)),
+            ou.ensure_budget(Int(500)),
+            (p_pos := ScratchVar()).store(parent_idx(idx)),
             If(
-                unsorted(curr_val.load(), p_val.load(), sort_lt),
+                unsorted(
+                    pq_read(key, idx, len),
+                    pq_read(key, p_pos.load(), len),
+                    sort_lt,
+                ),
                 Seq(
-                    pq_swap(key, smallest.load(), p_pos.load(), len),
+                    pq_swap(key, idx, p_pos.load(), len),
                     pq_upheap(key, p_pos.load(), len, sort_lt),
                 ),
             ),
@@ -216,34 +218,30 @@ def pq_downheap(key, idx, len, sort_lt):
     return If(
         idx < pq_count(),
         Seq(
-            ou.ensure_budget(Int(200)),
+            ou.ensure_budget(Int(500)),
+            (left_idx := ScratchVar()).store(child_idx_left(idx)),
+            (right_idx := ScratchVar()).store(child_idx_right(idx)),
+            (curr_val := ScratchVar()).store(pq_read(key, idx, len)),
             (curr_idx := ScratchVar()).store(idx),
-            (curr_val := ScratchVar()).store(pq_read(key, curr_idx.load(), len)),
             # Check the left side first
-            (left_idx := ScratchVar()).store(child_idx_left(curr_idx.load())),
-            (left_val := ScratchVar()).store(
-                If(
-                    left_idx.load() < pq_count(),
-                    pq_read(key, left_idx.load(), len),
-                    Bytes(""),
-                )
-            ),
             If(
-                unsorted(left_val.load(), curr_val.load(), sort_lt),
-                curr_idx.store(left_idx.load()),
+                left_idx.load() < pq_count(),
+                If(
+                    unsorted(
+                        pq_read(key, left_idx.load(), len), curr_val.load(), sort_lt
+                    ),
+                    curr_idx.store(left_idx.load()),
+                ),
             ),
             # Check the right side second
-            (right_idx := ScratchVar()).store(child_idx_right(curr_idx.load())),
-            (right_val := ScratchVar()).store(
-                If(
-                    right_idx.load() < pq_count(),
-                    pq_read(key, right_idx.load(), len),
-                    Bytes(""),
-                )
-            ),
             If(
-                unsorted(right_val.load(), curr_val.load(), sort_lt),
-                curr_idx.store(right_idx.load()),
+                right_idx.load() < pq_count(),
+                If(
+                    unsorted(
+                        pq_read(key, right_idx.load(), len), curr_val.load(), sort_lt
+                    ),
+                    curr_idx.store(right_idx.load()),
+                ),
             ),
             # If largest is now different than current swap them and start over
             If(

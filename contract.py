@@ -15,7 +15,7 @@ ASK_SORT = Int(1)
 BID_SORT = Int(0)
 
 ask_pq = PriorityQueue(ask_book_key, box_size, ASK_SORT, RestingOrderType)
-bid_pq = PriorityQueue(bid_book_key, box_size, BID_SORT, RestingOrderType)
+bid_pq = PriorityQueue(bid_book_key, box_size, ASK_SORT, RestingOrderType)
 
 router = Router(
     "vex",
