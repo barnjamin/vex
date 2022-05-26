@@ -298,35 +298,35 @@ retsub
 
 // pq_remove
 pqremove_3:
-store 46
 store 45
 store 44
 store 43
+store 42
 bytec_0 // "resting_orders"
 bytec_0 // "resting_orders"
 app_global_get
 intc_1 // 1
 -
 app_global_put
+load 42
 load 43
-load 44
 bytec_0 // "resting_orders"
 app_global_get
-load 45
+load 44
 callsub pqswap_4
+load 42
 load 43
 load 44
 load 45
-load 46
 callsub pqdownheap_7
-load 43
+load 42
 bytec_0 // "resting_orders"
 app_global_get
-load 45
+load 44
 bzero
 len
 *
-load 45
+load 44
 bzero
 box_replace
 retsub
@@ -369,37 +369,37 @@ retsub
 
 // pq_search
 pqsearch_5:
-store 48
 store 47
+store 46
 intc_0 // 0
-store 49
+store 48
 pqsearch_5_l1:
-load 49
+load 48
 bytec_0 // "resting_orders"
 app_global_get
 <
 bz pqsearch_5_l5
+load 47
+load 46
 load 48
 load 47
-load 49
-load 48
 len
 *
-load 48
+load 47
 len
 box_extract
 ==
 bnz pqsearch_5_l4
-load 49
+load 48
 intc_1 // 1
 +
-store 49
+store 48
 b pqsearch_5_l1
 pqsearch_5_l4:
-load 49
+load 48
 retsub
 pqsearch_5_l5:
-load 49
+load 48
 retsub
 
 // pq_upheap
@@ -517,49 +517,42 @@ global OpcodeBudget
 >
 bnz pqdownheap_7_l11
 load 33
-intc_2 // 2
-*
-intc_1 // 1
-+
 store 37
 load 33
 intc_2 // 2
 *
-intc_2 // 2
+intc_1 // 1
 +
 store 38
-load 32
 load 33
-load 34
+intc_2 // 2
 *
-load 34
-box_extract
+intc_2 // 2
++
 store 39
-load 33
-store 40
-load 37
+load 38
 bytec_0 // "resting_orders"
 app_global_get
 <
 bnz pqdownheap_7_l9
 pqdownheap_7_l4:
-load 38
+load 39
 bytec_0 // "resting_orders"
 app_global_get
 <
 bnz pqdownheap_7_l7
 pqdownheap_7_l5:
-load 40
+load 37
 load 33
 !=
 bz pqdownheap_7_l12
 load 32
 load 33
-load 40
+load 37
 load 34
 callsub pqswap_4
 load 32
-load 40
+load 37
 load 34
 load 35
 load 32
@@ -570,13 +563,11 @@ load 36
 load 37
 load 38
 load 39
-load 40
-uncover 12
-uncover 12
-uncover 12
-uncover 12
+uncover 11
+uncover 11
+uncover 11
+uncover 11
 callsub pqdownheap_7
-store 40
 store 39
 store 38
 store 37
@@ -588,38 +579,41 @@ store 32
 b pqdownheap_7_l12
 pqdownheap_7_l7:
 load 32
-load 38
+load 39
 load 34
 *
 load 34
 box_extract
-load 39
+load 32
+load 37
+load 34
+*
+load 34
+box_extract
 load 35
 callsub unsorted_0
 bz pqdownheap_7_l5
-load 38
-store 40
+load 39
+store 37
 b pqdownheap_7_l5
 pqdownheap_7_l9:
 load 32
+load 38
+load 34
+*
+load 34
+box_extract
+load 32
 load 37
 load 34
 *
 load 34
 box_extract
-load 39
 load 35
 callsub unsorted_0
 bz pqdownheap_7_l4
-load 37
-store 40
-load 32
-load 40
-load 34
-*
-load 34
-box_extract
-store 39
+load 38
+store 37
 b pqdownheap_7_l4
 pqdownheap_7_l11:
 itxn_begin
@@ -721,13 +715,13 @@ retsub
 
 // cancel_order
 cancelorder_14:
+store 40
+bytec_1 // "bid_book"
+load 40
+callsub pqsearch_5
 store 41
 bytec_1 // "bid_book"
 load 41
-callsub pqsearch_5
-store 42
-bytec_1 // "bid_book"
-load 42
 intc_3 // 24
 intc_0 // 0
 callsub pqremove_3

@@ -88,6 +88,9 @@ def pq_zero(key, idx, len):
 
 @Subroutine(TealType.uint64)
 def unsorted(a, b, lt):
+    """unsorted takes a and b as bytes and lt as the sort order,
+    returning whether or not the elements are in correct order
+    """
     return If(
         Or(Len(a) == Int(0), Len(b) == Int(0)),
         Int(0),
@@ -178,7 +181,8 @@ def pq_search(key, val):
         For(init, cond, iter).Do(
             If(val == pq_read(key, i.load(), Len(val)), Return(i.load()))
         ),
-        i.load(),
+        # lie
+        pq_count() + Int(1),
     )
 
 
@@ -218,21 +222,19 @@ def pq_downheap(key, idx, len, sort_lt):
         idx < pq_count(),
         Seq(
             ou.ensure_budget(Int(500)),
+            (curr_idx := ScratchVar()).store(idx),
             (left_idx := ScratchVar()).store(child_idx_left(idx)),
             (right_idx := ScratchVar()).store(child_idx_right(idx)),
-            (curr_val := ScratchVar()).store(pq_read(key, idx, len)),
-            (curr_idx := ScratchVar()).store(idx),
             # Check the left side first
             If(
                 left_idx.load() < pq_count(),
                 If(
                     unsorted(
-                        pq_read(key, left_idx.load(), len), curr_val.load(), sort_lt
+                        pq_read(key, left_idx.load(), len),
+                        pq_read(key, curr_idx.load(), len),
+                        sort_lt,
                     ),
-                    Seq(
-                        curr_idx.store(left_idx.load()),
-                        curr_val.store(pq_read(key, curr_idx.load(), len)),
-                    ),
+                    curr_idx.store(left_idx.load()),
                 ),
             ),
             # Check the right side second
@@ -240,7 +242,9 @@ def pq_downheap(key, idx, len, sort_lt):
                 right_idx.load() < pq_count(),
                 If(
                     unsorted(
-                        pq_read(key, right_idx.load(), len), curr_val.load(), sort_lt
+                        pq_read(key, right_idx.load(), len),
+                        pq_read(key, curr_idx.load(), len),
+                        sort_lt,
                     ),
                     curr_idx.store(right_idx.load()),
                 ),

@@ -11,6 +11,16 @@ seq_key = Bytes("sequence")
 ask_book_key = Bytes("ask_book")
 bid_book_key = Bytes("bid_book")
 
+
+@Subroutine(TealType.uint64)
+def assign_sequence():
+    return Seq(
+        (sv := ScratchVar()).store(App.globalGet(seq_key)),
+        App.globalPut(seq_key, sv.load() + Int(1)),
+        sv.load(),
+    )
+
+
 ASK_SORT = Int(1)
 BID_SORT = Int(0)
 
@@ -43,18 +53,6 @@ def bootstrap():
     )
 
 
-router.add_method_handler(bootstrap)
-
-
-@Subroutine(TealType.uint64)
-def assign_sequence():
-    return Seq(
-        (sv := ScratchVar()).store(App.globalGet(seq_key)),
-        App.globalPut(seq_key, sv.load() + Int(1)),
-        sv.load(),
-    )
-
-
 @ABIReturnSubroutine
 def new_order(order: IncomingOrderType):
     return Seq(
@@ -63,6 +61,8 @@ def new_order(order: IncomingOrderType):
         (s := abi.Uint64()).set(io.size()),
         (seq := abi.Uint64()).set(assign_sequence()),
         (resting_order := abi.make(RestingOrderType)).set(p, seq, s),
+        # while incoming order is unfilled,
+        #   peek next order and pop if match
         bid_pq.insert(resting_order),
     )
 
@@ -87,6 +87,7 @@ def cancel_order(ro: RestingOrderType):
     return bid_pq.delete(ro)
 
 
+router.add_method_handler(bootstrap)
 router.add_method_handler(new_order)
 router.add_method_handler(peek_root)
 router.add_method_handler(fill_root)
