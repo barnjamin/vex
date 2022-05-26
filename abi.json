@@ -1,1 +1,46 @@
-{"name": "vex", "methods": [{"name": "fill_root", "args": [], "returns": {"type": "(uint64,uint64,uint64)"}}, {"name": "bootstrap", "args": [], "returns": {"type": "void"}}, {"name": "new_order", "args": [{"type": "(uint64,uint64)"}], "returns": {"type": "void"}}, {"name": "peek_root", "args": [], "returns": {"type": "(uint64,uint64,uint64)"}}, {"name": "noop", "args": [], "returns": {"type": "void"}}], "desc": null, "networks": {}}
+{
+  "name": "vex",
+  "methods": [
+    {
+      "name": "peek_root",
+      "args": [],
+      "returns": {
+        "type": "(uint64,uint64,uint64)"
+      }
+    },
+    {
+      "name": "new_order",
+      "args": [
+        {
+          "type": "(uint64,uint64)"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "fill_root",
+      "args": [],
+      "returns": {
+        "type": "(uint64,uint64,uint64)"
+      }
+    },
+    {
+      "name": "bootstrap",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "noop",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    }
+  ],
+  "desc": null,
+  "networks": {}
+}

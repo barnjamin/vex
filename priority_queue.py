@@ -1,26 +1,80 @@
-from typing import Type
 from pyteal import *
-
 
 resting_orders_key = Bytes("resting_orders")
 
+
+class PriorityQueue:
+    def __init__(self, box_name: Bytes, box_size: Int, type_spec: abi.TypeSpec):
+        self.box_name = box_name
+        self.box_size = box_size
+        self.type_spec = type_spec
+        self.type_size = Int(abi.size_of(self.type_spec))
+
+    def count(self) -> Expr:
+        return pq_count()
+
+    def insert(self, thing: abi.BaseType) -> Expr:
+        return pq_insert(self.box_name, pq_count(), thing.encode())
+
+    def delete(self, thing: abi.BaseType) -> Expr:
+        return Seq((idx := abi.Uint64()).set(self.search(thing)), self.remove(idx))
+
+    def peek(self) -> Expr:
+        return pq_read(self.box_name, Int(0), self.type_size)
+
+    def pop(self) -> Expr:
+        return pq_pop(self.box_name, self.type_size)
+
+    def remove(self, idx: abi.Uint64) -> Expr:
+        return pq_remove(self.box_name, idx.get(), self.type_size)
+
+    def get(self, idx: abi.Uint64) -> Expr:
+        return pq_read(self.box_name, idx.get(), self.type_size)
+
+    def search(self, thing: abi.BaseType) -> Expr:
+        return pq_search(self.box_name, thing.encode())
+
+
 ##### pq counter stored in global state
-@Subroutine(TealType.uint64)
 def pq_count():
     return App.globalGet(resting_orders_key)
 
 
-@Subroutine(TealType.none)
 def pq_count_incr():
     return App.globalPut(resting_orders_key, pq_count() + Int(1))
 
 
-@Subroutine(TealType.none)
 def pq_count_decr():
     return App.globalPut(resting_orders_key, pq_count() - Int(1))
 
 
+# pq idx helpers
+def child_idx_left(pos) -> Expr:
+    return pos * Int(2)
+
+
+def child_idx_right(pos) -> Expr:
+    return (pos * Int(2)) + Int(1)
+
+
+def parent_idx(pos) -> Expr:
+    return If(pos % Int(2) == Int(0), (pos - Int(1)), pos) / Int(2)
+
+
 #### pq read/writes
+def pq_write(key, idx, val):
+    return BoxReplace(key, idx * Len(val), val)
+
+
+def pq_read(key, idx, len):
+    return BoxExtract(key, idx * len, len)
+
+
+def pq_zero(key, idx, len):
+    return pq_write(key, idx, BytesZero(len))
+
+
+## pq operations
 @Subroutine(TealType.none)
 def pq_insert(key, idx, val):
     return Seq(pq_write(key, idx, val), pq_upheap(key, idx, Len(val)), pq_count_incr())
@@ -43,32 +97,36 @@ def pq_pop(key, len):
         pq_count_decr(),
         pq_swap(key, Int(0), pq_count(), len),
         pq_downheap(key, Int(0), len),
+        pq_zero(key, pq_count(), len),
         top.load(),
     )
 
 
 @Subroutine(TealType.none)
-def pq_write(key, idx, val):
-    return BoxReplace(key, idx * Len(val), val)
+def pq_remove(key, idx, len):
+    return Seq(
+        pq_count_decr(),
+        pq_swap(key, idx, pq_count(), len),
+        pq_downheap(key, idx, len),
+        pq_zero(key, pq_count(), len),
+    )
 
 
-@Subroutine(TealType.bytes)
-def pq_read(key, idx, len):
-    return BoxExtract(key, idx * len, len)
+@Subroutine(TealType.uint64)
+def pq_search(key, val):
+    i = ScratchVar()
+    init = i.store(Int(0))
+    cond = i.load() < pq_count()
+    iter = i.store(i.load() + Int(1))
+    return Seq(
+        For(init, cond, iter).Do(
+            If(val == pq_read(key, i.load(), Len(val)), Return(i.load()))
+        ),
+        i.load(),
+    )
 
 
-def child_idx_left(pos) -> Expr:
-    return pos * Int(2)
-
-
-def child_idx_right(pos) -> Expr:
-    return (pos * Int(2)) + Int(1)
-
-
-def parent_idx(pos) -> Expr:
-    return If(pos % Int(2) == Int(0), (pos - Int(1)), pos) / Int(2)
-
-
+# pq Heap invariant restoring
 @Subroutine(TealType.uint64)
 def sorted_lt(a, b) -> Expr:
     """sorted_lt checks to see if a is less than b by comparing the price|sequence both uint64"""
@@ -146,30 +204,3 @@ def pq_downheap(key, idx, len):
             )
         ),
     )
-
-
-class PriorityQueue:
-    def __init__(self, box_name: Bytes, box_size: Int, type_spec: abi.TypeSpec):
-        self.box_name = box_name
-        self.box_size = box_size
-        self.type_spec = type_spec
-        self.type_size = Int(abi.size_of(self.type_spec))
-
-    def count(self) -> Expr:
-        return pq_count()
-
-    def insert(self, thing: abi.BaseType) -> Expr:
-        return pq_insert(self.box_name, pq_count(), thing.encode())
-
-    def peek(self):
-        return pq_read(self.box_name, Int(0), self.type_size)
-
-    def pop(self):
-        return pq_pop(self.box_name, self.type_size)
-
-    def remove(self, thing: abi.BaseType) -> Expr:
-        pass
-        # return pq_delete(self.box_name, )
-
-    def search(self):
-        pass

@@ -23,8 +23,6 @@ approval, clear, iface = router.compile_program(
     optimize=OptimizeOptions(scratch_slots=True),
 )
 
-iface = abi.Interface.undictify(iface)
-
 
 def get_method(name: str) -> abi.Method:
     for m in iface.methods:
@@ -97,6 +95,33 @@ def call_fill_root(app_id: int):
             print(f"Popped root: {res.return_value}")
 
 
+def call_cancel_order(app_id: int, order_idx: int):
+
+    resting_order = call_read_order(app_id, order_idx)
+
+    meth = get_method("cancel_order")
+    boxes = [BoxReference(0, "book")]
+
+    sp = client.suggested_params()
+    atc = AtomicTransactionComposer()
+    atc.add_method_call(app_id, meth, addr, sp, signer, [resting_order], boxes=boxes)
+    atc.execute(client, 2)
+
+
+def call_read_order(app_id: int, order_idx: int):
+    meth = get_method("read_order")
+    boxes = [BoxReference(0, "book")]
+
+    sp = client.suggested_params()
+    atc = AtomicTransactionComposer()
+    atc.add_method_call(app_id, meth, addr, sp, signer, [order_idx], boxes=boxes)
+
+    result = atc.execute(client, 2)
+    for res in result.abi_results:
+        if res.return_value is not None:
+            return res.return_value
+
+
 if __name__ == "__main__":
     app_id, app_addr = create()
     print("Calling bootstrap")
@@ -108,10 +133,24 @@ if __name__ == "__main__":
     call_new_order(app_id, 5)
     call_new_order(app_id, 3)
 
-    call_fill_root(app_id)
-    call_fill_root(app_id)
-    call_fill_root(app_id)
-    call_fill_root(app_id)
-    call_fill_root(app_id)
+    # print(call_read_order(app_id, 0))
+    # print(call_read_order(app_id, 1))
+    # print(call_read_order(app_id, 2))
+    # print(call_read_order(app_id, 3))
+
+    for idx in range(5):
+        print(call_read_order(app_id, idx))
+
+    call_cancel_order(app_id, 2)
+    print("")
+
+    for idx in range(5):
+        print(call_read_order(app_id, idx))
+
+    # call_fill_root(app_id)
+    # call_fill_root(app_id)
+    # call_fill_root(app_id)
+    # call_fill_root(app_id)
+    # call_fill_root(app_id)
 
     # delete(app_id)

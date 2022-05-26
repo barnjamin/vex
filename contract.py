@@ -13,17 +13,17 @@ book_key = Bytes("book")
 
 router = Router(
     "vex",
-    OCActions(
-        no_op=OCAction.create_only(Approve()),
-        update_application=OCAction.always(
+    OnCompleteActions(
+        no_op=OnCompleteAction.create_only(Approve()),
+        update_application=OnCompleteAction.always(
             Return(Txn.sender() == Global.creator_address())
         ),
-        delete_application=OCAction.always(
+        delete_application=OnCompleteAction.always(
             Return(Txn.sender() == Global.creator_address())
         ),
-        opt_in=OCAction.always(Reject()),
-        clear_state=OCAction.always(Reject()),
-        close_out=OCAction.always(Reject()),
+        opt_in=OnCompleteAction.always(Reject()),
+        clear_state=OnCompleteAction.always(Reject()),
+        close_out=OnCompleteAction.always(Reject()),
     ),
 )
 
@@ -96,18 +96,23 @@ router.add_method_handler(fill_root)
 
 
 @ABIReturnSubroutine
-def noop():
-    return Seq()
+def read_order(idx: abi.Uint64, *, output: RestingOrderType):
+    return output.decode(pq.get(idx))
 
 
-router.add_method_handler(noop)
+router.add_method_handler(read_order)
 
+
+@ABIReturnSubroutine
+def cancel_order(ro: RestingOrderType):
+    return pq.delete(ro)
+
+
+router.add_method_handler(cancel_order)
 
 if __name__ == "__main__":
     import os
     import json
-
-    path = os.path.dirname(os.path.abspath(__file__))
 
     approval, clear, spec = router.compile_program(
         version=7,
@@ -115,8 +120,9 @@ if __name__ == "__main__":
         optimize=OptimizeOptions(scratch_slots=True),
     )
 
+    path = os.path.dirname(os.path.abspath(__file__))
     with open(os.path.join(path, "abi.json"), "w") as f:
-        f.write(json.dumps(spec))
+        f.write(json.dumps(spec.dictify(), indent=2))
 
     with open(os.path.join(path, "approval.teal"), "w") as f:
         f.write(approval)
