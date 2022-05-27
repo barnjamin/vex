@@ -3,7 +3,7 @@ from algosdk.future.transaction import BoxReference, logic
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
 
 from sandbox import get_sandbox_accounts
-from vex import vex
+from vex import vex, ask_pq, bid_pq
 from application_client import ApplicationClient
 
 host = "http://localhost:4001"
@@ -15,7 +15,7 @@ accts = get_sandbox_accounts()
 addr, sk = accts[-1]
 signer = AccountTransactionSigner(sk)
 
-boxes = [BoxReference(0, "ask_book"), BoxReference(0, "bid_book")]
+boxes = [BoxReference(0, ask_pq.box_name_str), BoxReference(0, bid_pq.box_name_str)]
 
 if __name__ == "__main__":
 
