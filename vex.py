@@ -10,7 +10,6 @@ box_size = Int(32 * kb)
 ask_pq = PriorityQueue("ask_book", box_size, Int(1), RestingOrderType)
 bid_pq = PriorityQueue("bid_book", box_size, Int(0), RestingOrderType)
 
-
 class Vex(Application):
     globals: List[GlobalStorageValue] = [
         # Static Config
@@ -110,23 +109,3 @@ vex.router.add_method_handler(peek_root)
 vex.router.add_method_handler(fill_root)
 vex.router.add_method_handler(read_order)
 vex.router.add_method_handler(cancel_order)
-
-if __name__ == "__main__":
-    import os
-    import json
-
-    approval, clear, spec = vex.router.compile_program(
-        version=7,
-        assembleConstants=True,
-        optimize=OptimizeOptions(scratch_slots=True),
-    )
-
-    path = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(path, "abi.json"), "w") as f:
-        f.write(json.dumps(spec.dictify(), indent=2))
-
-    with open(os.path.join(path, "approval.teal"), "w") as f:
-        f.write(approval)
-
-    with open(os.path.join(path, "clear.teal"), "w") as f:
-        f.write(clear)

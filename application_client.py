@@ -104,6 +104,26 @@ class ApplicationClient:
         )
         return ctx.execute(self.client, 2)
 
+    def compose(
+        self,
+        signer: AccountTransactionSigner,
+        method: Method,
+        args: List[any],
+        ctx: AtomicTransactionComposer,
+        **kwargs
+    ):
+        sp = self.client.suggested_params()
+        addr = address_from_private_key(signer.private_key)
+        ctx.add_method_call(
+            self.app_id,
+            method,
+            addr,
+            sp,
+            signer,
+            method_args=args,
+            **kwargs,
+        )
+
     def call(
         self,
         signer: AccountTransactionSigner,
@@ -123,4 +143,5 @@ class ApplicationClient:
             method_args=args,
             **kwargs,
         )
-        return ctx.execute(self.client, 2)
+        result = ctx.execute(self.client, 2)
+        return result.abi_results[0].return_value

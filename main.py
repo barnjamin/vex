@@ -19,15 +19,15 @@ boxes = [BoxReference(0, ask_pq.box_name_str), BoxReference(0, bid_pq.box_name_s
 
 if __name__ == "__main__":
 
-    app_id, app_addr = client.create(signer, int(4e6))
+    app_id, app_addr = client.create(signer, int(4e8))
     print(f"Created {app_id} with app address {app_addr}")
 
     result = client.bootstrap(signer, [], boxes=boxes)
-    print(result.__dict__)
+    print(result)
 
     price, size = 500, 10
     result = client.new_order(signer, [(price, size)], boxes=boxes)
-    print(result.__dict__)
+    print(result)
 
     result = client.fill_root(signer, [], boxes=boxes)
-    print(result.__dict__)
+    print(result)
