@@ -1,6 +1,5 @@
 from pyteal import *
 
-resting_orders_key = Bytes("resting_orders")
 ou = OpUp(OpUpMode.OnCall)
 
 
