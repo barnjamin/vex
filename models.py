@@ -1,5 +1,4 @@
 from typing import Callable
-from xmlrpc.client import Boolean
 from pyteal import *
 
 

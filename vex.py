@@ -1,4 +1,3 @@
-from re import I
 from typing import List
 from pyteal import *
 from application import *
