@@ -19,7 +19,6 @@ class Vex(Application):
         GlobalStorageValue("lot_a", TealType.uint64, immutable=True),
         GlobalStorageValue("lot_b", TealType.uint64, immutable=True),
         GlobalStorageValue("decimals", TealType.uint64, immutable=True),
-
         # Updated as needed
         GlobalStorageValue("seq", TealType.uint64),
         GlobalStorageValue("bid", TealType.uint64),

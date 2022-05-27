@@ -5,9 +5,7 @@ ou = OpUp(OpUpMode.OnCall)
 
 
 class PriorityQueue:
-    def __init__(
-        self, box_name: str, box_size: Int, lt: Int, type_spec: abi.TypeSpec
-    ):
+    def __init__(self, box_name: str, box_size: Int, lt: Int, type_spec: abi.TypeSpec):
         self.box_name_str = box_name
         self.box_name = Bytes(box_name)
         self.box_size = box_size
