@@ -54,9 +54,11 @@ def call_bootstrap(app_id: int):
     sp = client.suggested_params()
     atc = AtomicTransactionComposer()
     atc.add_method_call(app_id, meth, addr, sp, signer, [], boxes=boxes)
+
     drr = atc.dryrun(client)
     for t in drr.trace.txns:
         print(t.app_trace())
+
     #atc.execute(client, 2)
 
 

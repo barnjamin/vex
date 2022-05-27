@@ -93,19 +93,11 @@ class LocalStorageValue:
         self.key = Bytes(key)
         self.stack_type = stack_type
 
-    def set(self, acct: Expr, val: Union[abi.BaseType, Bytes]) -> Expr:
-        if isinstance(abi.BaseType, val):
-            return App.localPut(self.key, acct.encode(), val.encode())
-        else:
-            return App.localPut(self.key, acct.encode(), val.encode())
+    def set(self, acct: Expr, val: Expr) -> Expr:
+            return App.localPut(self.key, acct, val)
 
     def get(self, acct: abi.Account) -> Expr:
-        return self.t.decode(App.localGet(self.key, acct.encode()))
+        return App.localGet(acct, self.key)
 
     def getElse(self, acct: abi.Address, val: Expr) -> Expr:
-        return self.t.decode(
-            Seq(
-                v := App.localGetEx(Int(0), acct.encode(), self.key),
-                If(v.hasValue(), v.value(), val),
-            )
-        )
+        return If((v := App.localGetEx(Int(0), acct.encode(), self.key)).hasValue(), v.value(), val)
