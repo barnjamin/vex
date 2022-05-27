@@ -1,133 +1,61 @@
 #pragma version 7
 intcblock 0 1 2 24 500 32768
 bytecblock 0x6269645f626f6f6b 0x068101 0x151f7c75 0x736571 0x61736b5f626f6f6b
-txn ApplicationID
+txn NumAppArgs
 intc_0 // 0
 ==
-txn OnCompletion
-intc_2 // CloseOut
-==
-&&
-bnz main_l30
-txn ApplicationID
-intc_0 // 0
-==
-txn OnCompletion
-pushint 5 // DeleteApplication
-==
-&&
-bnz main_l29
-txn ApplicationID
-intc_0 // 0
-==
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l28
-txn ApplicationID
-intc_0 // 0
-==
-txn OnCompletion
-intc_1 // OptIn
-==
-&&
-bnz main_l27
-txn ApplicationID
-intc_0 // 0
-==
-txn OnCompletion
-pushint 4 // UpdateApplication
-==
-&&
 bnz main_l26
 txna ApplicationArgs 0
 pushbytes 0xbec76d87 // "bootstrap()void"
 ==
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l25
+bnz main_l23
 txna ApplicationArgs 0
 pushbytes 0xe8270d09 // "new_order((uint64,uint64))void"
 ==
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l24
+bnz main_l20
 txna ApplicationArgs 0
 pushbytes 0x309c9ba0 // "peek_root()(uint64,uint64,uint64)"
 ==
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l23
+bnz main_l17
 txna ApplicationArgs 0
 pushbytes 0xdc05ebb9 // "fill_root()(uint64,uint64,uint64)"
 ==
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l22
+bnz main_l14
 txna ApplicationArgs 0
 pushbytes 0xea0d9bc6 // "read_order(uint64)(uint64,uint64,uint64)"
 ==
-txn OnCompletion
-intc_0 // NoOp
-==
-&&
-bnz main_l21
+bnz main_l11
 txna ApplicationArgs 0
 pushbytes 0xc4e47ff4 // "cancel_order((uint64,uint64,uint64))void"
 ==
+bnz main_l8
+err
+main_l8:
 txn OnCompletion
 intc_0 // NoOp
 ==
+txn ApplicationID
+intc_0 // 0
+==
 &&
-bnz main_l20
-txn OnCompletion
-intc_2 // CloseOut
-==
-bnz main_l19
-txn OnCompletion
-pushint 5 // DeleteApplication
-==
-bnz main_l18
-txn OnCompletion
-intc_1 // OptIn
-==
-bnz main_l17
-txn OnCompletion
-pushint 4 // UpdateApplication
-==
-bnz main_l16
+bnz main_l10
 err
-main_l16:
-txn Sender
-global CreatorAddress
-==
-return
-main_l17:
-intc_0 // 0
-return
-main_l18:
-txn Sender
-global CreatorAddress
-==
-return
-main_l19:
-intc_0 // 0
-return
-main_l20:
+main_l10:
 txna ApplicationArgs 1
 callsub cancelorder_14
 intc_1 // 1
 return
-main_l21:
+main_l11:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l13
+err
+main_l13:
 txna ApplicationArgs 1
 btoi
 callsub readorder_13
@@ -138,7 +66,17 @@ concat
 log
 intc_1 // 1
 return
-main_l22:
+main_l14:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l16
+err
+main_l16:
 callsub fillroot_12
 store 1
 bytec_2 // 0x151f7c75
@@ -147,7 +85,17 @@ concat
 log
 intc_1 // 1
 return
-main_l23:
+main_l17:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l19
+err
+main_l19:
 callsub peekroot_11
 store 0
 bytec_2 // 0x151f7c75
@@ -156,33 +104,143 @@ concat
 log
 intc_1 // 1
 return
-main_l24:
+main_l20:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l22
+err
+main_l22:
 txna ApplicationArgs 1
 callsub neworder_10
 intc_1 // 1
 return
+main_l23:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l25
+err
 main_l25:
 callsub bootstrap_9
 intc_1 // 1
 return
 main_l26:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l44
+txn OnCompletion
+intc_1 // OptIn
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+bnz main_l43
+txn OnCompletion
+intc_1 // OptIn
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l42
+txn OnCompletion
+intc_2 // CloseOut
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+bnz main_l41
+txn OnCompletion
+intc_2 // CloseOut
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l40
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+bnz main_l39
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l38
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+bnz main_l37
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+txn ApplicationID
+intc_0 // 0
+==
+&&
+bnz main_l36
+err
+main_l36:
 txn Sender
 global CreatorAddress
 ==
 return
-main_l27:
+main_l37:
+txn Sender
+global CreatorAddress
+==
+return
+main_l38:
+txn Sender
+global CreatorAddress
+==
+return
+main_l39:
+txn Sender
+global CreatorAddress
+==
+return
+main_l40:
 intc_0 // 0
 return
-main_l28:
+main_l41:
+intc_0 // 0
+return
+main_l42:
+intc_0 // 0
+return
+main_l43:
+intc_0 // 0
+return
+main_l44:
 intc_1 // 1
-return
-main_l29:
-txn Sender
-global CreatorAddress
-==
-return
-main_l30:
-intc_0 // 0
 return
 
 // unsorted
