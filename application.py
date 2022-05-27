@@ -1,5 +1,4 @@
-from sre_parse import State
-from typing import List, Union, Tuple
+from typing import List
 from pyteal import *
 from algosdk.future.transaction import StateSchema
 
