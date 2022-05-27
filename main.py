@@ -19,8 +19,7 @@ boxes = [BoxReference(0, "ask_book"), BoxReference(0, "bid_book")]
 
 if __name__ == "__main__":
 
-    app_id = client.create(signer)
-    app_addr = logic.get_application_address(app_id)
+    app_id, app_addr = client.create(signer, int(4e6))
     print(f"Created {app_id} with app address {app_addr}")
 
     result = client.bootstrap(signer, [], boxes=boxes)

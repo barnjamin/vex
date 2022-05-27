@@ -1,11 +1,10 @@
+import base64
+from typing import List, Tuple
+
 from algosdk.algod import AlgodClient
 from application import Application
 from pyteal import OptimizeOptions
-import base64
-from os import urandom
-from typing import List
-
-from algosdk.abi import Contract, Method, NetworkInfo
+from algosdk.abi import Method
 from algosdk.account import address_from_private_key
 from algosdk.atomic_transaction_composer import (
     AtomicTransactionComposer,
@@ -13,6 +12,9 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
 )
 from algosdk.future.transaction import (
+    logic,
+    wait_for_confirmation,
+    PaymentTxn,
     ApplicationCreateTxn,
     ApplicationDeleteTxn,
     OnComplete,
@@ -48,7 +50,9 @@ class ApplicationClient:
 
         return call
 
-    def create(self, signer: AccountTransactionSigner) -> int:
+    def create(
+        self, signer: AccountTransactionSigner, seed_amt: int = 0
+    ) -> Tuple[int, str]:
         approval_result = self.client.compile(self.approval)
         approval_program = base64.b64decode(approval_result["result"])
 
@@ -57,11 +61,12 @@ class ApplicationClient:
 
         sp = self.client.suggested_params()
 
+        sender = address_from_private_key(signer.private_key)
         ctx = AtomicTransactionComposer()
         ctx.add_transaction(
             TransactionWithSigner(
                 ApplicationCreateTxn(
-                    address_from_private_key(signer.private_key),
+                    sender,
                     sp,
                     OnComplete.NoOpOC,
                     approval_program,
@@ -76,8 +81,14 @@ class ApplicationClient:
 
         tx_result = self.client.pending_transaction_info(result.tx_ids[0])
         self.app_id = tx_result["application-index"]
+        self.app_addr = logic.get_application_address(self.app_id)
 
-        return self.app_id
+        if seed_amt > 0:
+            ptxn = PaymentTxn(sender, sp, self.app_addr, seed_amt)
+            txid = self.client.send_transaction(ptxn.sign(signer.private_key))
+            wait_for_confirmation(self.client, txid, 2)
+
+        return self.app_id, self.app_addr
 
     def delete(self, signer: AccountTransactionSigner):
         sp = self.client.suggested_params()
