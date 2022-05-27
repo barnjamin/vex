@@ -19,8 +19,8 @@ from algosdk.future.transaction import (
 )
 from algosdk.v2client.algod import AlgodClient
 
-class ApplicationClient:
 
+class ApplicationClient:
     def __init__(self, client: AlgodClient, app: Application):
         self.client = client
         self.app = app
@@ -29,7 +29,6 @@ class ApplicationClient:
             version=7,
             assembleConstants=True,
             optimize=OptimizeOptions(scratch_slots=True),
-
         )
         self.approval = approval
         self.clear = clear
@@ -46,10 +45,10 @@ class ApplicationClient:
     def _get_caller(self, m):
         def call(signer, args, **kwargs):
             return self.call(signer, m, args, **kwargs)
+
         return call
 
-
-    def create(self, signer: AccountTransactionSigner)->int:
+    def create(self, signer: AccountTransactionSigner) -> int:
         approval_result = self.client.compile(self.approval)
         approval_program = base64.b64decode(approval_result["result"])
 
@@ -94,11 +93,23 @@ class ApplicationClient:
         )
         return ctx.execute(self.client, 2)
 
-    def call(self,  signer: AccountTransactionSigner, method: Method, args: List[any], **kwargs):
+    def call(
+        self,
+        signer: AccountTransactionSigner,
+        method: Method,
+        args: List[any],
+        **kwargs
+    ):
         ctx = AtomicTransactionComposer()
         sp = self.client.suggested_params()
         addr = address_from_private_key(signer.private_key)
         ctx.add_method_call(
-            self.app_id, method, addr, sp, signer, method_args=args, **kwargs,
+            self.app_id,
+            method,
+            addr,
+            sp,
+            signer,
+            method_args=args,
+            **kwargs,
         )
         return ctx.execute(self.client, 2)

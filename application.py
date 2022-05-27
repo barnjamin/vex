@@ -93,10 +93,14 @@ class LocalStorageValue:
         self.stack_type = stack_type
 
     def set(self, acct: Expr, val: Expr) -> Expr:
-            return App.localPut(self.key, acct, val)
+        return App.localPut(self.key, acct, val)
 
     def get(self, acct: abi.Account) -> Expr:
         return App.localGet(acct, self.key)
 
     def getElse(self, acct: abi.Address, val: Expr) -> Expr:
-        return If((v := App.localGetEx(Int(0), acct.encode(), self.key)).hasValue(), v.value(), val)
+        return If(
+            (v := App.localGetEx(Int(0), acct.encode(), self.key)).hasValue(),
+            v.value(),
+            val,
+        )

@@ -1,10 +1,8 @@
-import base64
-from algosdk import *
 from algosdk.v2client import algod
-from algosdk.future.transaction import *
-from algosdk.atomic_transaction_composer import *
-from algosdk.dryrun_results import *
-from deploy import *
+from algosdk.future.transaction import BoxReference, logic
+from algosdk.atomic_transaction_composer import AccountTransactionSigner
+
+from sandbox import get_sandbox_accounts
 from vex import vex
 from application_client import ApplicationClient
 

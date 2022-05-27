@@ -4,7 +4,7 @@ from algosdk.future.transaction import *
 from algosdk.atomic_transaction_composer import *
 from algosdk.dryrun_results import *
 from pyteal import Mode, OptimizeOptions, compileTeal
-from deploy import *
+from sandbox import *
 from contract import router
 
 host = "http://localhost:4001"
