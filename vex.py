@@ -179,7 +179,7 @@ def new_order(order: IncomingOrderType, *, output: abi.Uint64):
                         (resting_order := RestingOrder()).set(
                             price, seq, remaining_size
                         ),
-                        bid_pq.insert(resting_order),
+                        ask_pq.insert(resting_order),
                     ),
                 ),
             ),
@@ -192,7 +192,7 @@ def new_order(order: IncomingOrderType, *, output: abi.Uint64):
                         (resting_order := RestingOrder()).set(
                             price, seq, remaining_size
                         ),
-                        ask_pq.insert(resting_order),
+                        bid_pq.insert(resting_order),
                     ),
                 ),
             ),
