@@ -1,3 +1,4 @@
+from re import I
 from typing import List
 from pyteal import *
 from application import *
@@ -9,6 +10,7 @@ box_size = Int(32 * kb)
 
 ask_pq = PriorityQueue("ask_book", box_size, Int(1), RestingOrderType)
 bid_pq = PriorityQueue("bid_book", box_size, Int(0), RestingOrderType)
+
 
 class Vex(Application):
     globals: List[GlobalStorageValue] = [
@@ -64,48 +66,139 @@ def assign_sequence():
     )
 
 
-@ABIReturnSubroutine
+@Subroutine(TealType.uint64)
+def try_fill_bids(price: Expr, size: Expr):
+    return Seq(
+        (unfilled := ScratchVar()).store(size),
+        (resting_price := abi.Uint64()).set(price),
+        (resting_size := abi.Uint64()).set(size),
+        While(And(bid_pq.count()>Int(0), resting_price.get() >= price)).Do(
+            Seq(
+                #(ro := RestingOrder()).decode(bid_pq.peek()),
+                #(seq := abi.Uint64()).set(ro.sequence()),
+                #resting_price.set(ro.price()),
+                #resting_size.set(ro.size()),
+                #bid_pq.remove(Int(0))
+                #If(
+                #    # Match on price
+                #    resting_price.get() <= price,
+                #    bid_pq.remove(Int(0))
+                #    #If(
+                #    #    resting_size.get() > unfilled.load(),
+                #    #    bid_pq.remove(Int(0))
+                #    #    #Seq(
+                #    #    #    # Partial fill
+                #    #    #    (new_size := abi.Uint64()).set(
+                #    #    #        resting_size.get() - unfilled.load()
+                #    #    #    ),
+                #    #    #    ro.set(resting_price, new_size, seq),
+                #    #    #    bid_pq.update(Int(0), ro),
+                #    #    #    unfilled.store(Int(0)),
+                #    #    #),
+                #    #    #Seq(
+                #    #    #    # Full fill
+                #    #    #    bid_pq.remove(Int(0)),  # just pretend for now, need to actually xfer funds around
+                #    #    #    unfilled.store(unfilled.load() - resting_size.get()),
+                #    #    #),
+                #    #),
+                #),
+            )
+        ),
+        unfilled.load(),
+    )
+
+
+@Subroutine(TealType.uint64)
+def try_fill_asks(price: Expr, size: Expr):
+    return Seq(
+        (unfilled := ScratchVar()).store(size),
+        (resting_price := abi.Uint64()).set(price),
+        (resting_size := abi.Uint64()).set(size),
+        While(resting_price.get() <= price).Do(
+            Seq(
+                (ro := RestingOrder()).decode(ask_pq.peek()),
+                (seq := abi.Uint64()).set(ro.sequence()),
+                resting_price.set(ro.price()),
+                resting_size.set(ro.size()),
+                If(
+                    # Match on price
+                    resting_price.get() <= price,
+                    Seq(
+                        If(
+                            resting_size.get() > unfilled.load(),
+                            Seq(
+                                # Partial fill
+                                (new_size := abi.Uint64()).set(
+                                    resting_size.get() - unfilled.load()
+                                ),
+                                ro.set(resting_price, new_size, seq),
+                                ask_pq.update(Int(0), ro),
+                                unfilled.store(Int(0)),
+                            ),
+                            Seq(
+                                # Full fill
+                                ask_pq.remove(Int(0)),  # just pretend for now, need to actually xfer funds around
+                                unfilled.store(unfilled.load() - resting_size.get()),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        ),
+        unfilled.load(),
+    )
+
+
+@vex.router.method
 def bootstrap():
     return Seq(vex.initialize_globals(), ask_pq.initialize(), bid_pq.initialize())
 
 
-@ABIReturnSubroutine
+@vex.router.method
 def new_order(order: IncomingOrderType):
     return Seq(
         (io := IncomingOrder()).decode(order.encode()),
-        (p := abi.Uint64()).set(io.price()),
-        (s := abi.Uint64()).set(io.size()),
-        (seq := abi.Uint64()).set(assign_sequence()),
-        (resting_order := abi.make(RestingOrderType)).set(p, seq, s),
-        # while incoming order is unfilled,
-        #   peek next order and pop if match
-        bid_pq.insert(resting_order),
+        (bid_side := abi.Bool()).set(io.bid_side()),
+        (price := abi.Uint64()).set(io.price()),
+        (size := abi.Uint64()).set(io.size()),
+        If(
+            bid_side.get(),
+            Seq(
+                #(remaining_size := abi.Uint64()).set(
+                #    try_fill_bids(price.get(), size.get())
+                #),
+                (remaining_size := abi.Uint64()).set(size),
+                (seq := abi.Uint64()).set(assign_sequence()),
+                (resting_order := abi.make(RestingOrderType)).set(
+                    price, seq, remaining_size
+                ),
+                bid_pq.insert(resting_order),
+            ),
+            Seq(
+                #(remaining_size := abi.Uint64()).set(
+                #    try_fill_asks(price.get(), size.get())
+                #),
+                (remaining_size := abi.Uint64()).set(size),
+                (seq := abi.Uint64()).set(assign_sequence()),
+                (resting_order := abi.make(RestingOrderType)).set(
+                    price, seq, remaining_size
+                ),
+                ask_pq.insert(resting_order),
+            ),
+        ),
     )
 
 
-@ABIReturnSubroutine
-def peek_root(*, output: RestingOrderType):
-    return output.decode(bid_pq.peek())
-
-
-@ABIReturnSubroutine
-def fill_root(*, output: RestingOrderType):
+@vex.router.method
+def fill_root_bid(*, output: RestingOrderType):
     return output.decode(bid_pq.pop())
 
 
-@ABIReturnSubroutine
-def read_order(idx: abi.Uint64, *, output: RestingOrderType):
-    return output.decode(bid_pq.get(idx))
+@vex.router.method
+def fill_root_ask(*, output: RestingOrderType):
+    return output.decode(ask_pq.pop())
 
 
-@ABIReturnSubroutine
+@vex.router.method
 def cancel_order(ro: RestingOrderType):
     return bid_pq.delete(ro)
-
-
-vex.router.add_method_handler(bootstrap)
-vex.router.add_method_handler(new_order)
-vex.router.add_method_handler(peek_root)
-vex.router.add_method_handler(fill_root)
-vex.router.add_method_handler(read_order)
-vex.router.add_method_handler(cancel_order)

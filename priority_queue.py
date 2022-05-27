@@ -24,17 +24,21 @@ class PriorityQueue:
         """insert adds a new element in sorted order"""
         return pq_insert(self.box_name, thing.encode(), self.lt)
 
+    def update(self, idx: Expr, thing: abi.BaseType) -> Expr:
+        """insert adds a new element in sorted order"""
+        return pq_write(self.box_name, idx, thing.encode())
+
     def delete(self, thing: abi.BaseType) -> Expr:
         """delete removes a given element by finding it in the pq then removing it by index"""
-        return Seq((idx := abi.Uint64()).set(self.search(thing)), self.remove(idx))
+        return self.remove(self.search(thing))
 
     def pop(self) -> Expr:
         """pop removes the first element from the pq and returns it after resorting the pq"""
         return pq_pop(self.box_name, self.type_size, self.lt)
 
-    def remove(self, idx: abi.Uint64) -> Expr:
+    def remove(self, idx: Expr) -> Expr:
         """remove removes an element by its index"""
-        return pq_remove(self.box_name, idx.get(), self.type_size, self.lt)
+        return pq_remove(self.box_name, idx, self.type_size, self.lt)
 
     def peek(self) -> Expr:
         """peak reads the root element but doesn't modify the pq"""

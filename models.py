@@ -1,4 +1,5 @@
 from typing import Callable
+from xmlrpc.client import Boolean
 from pyteal import *
 
 
@@ -31,6 +32,7 @@ class RestingOrder(NamedTuple):
 
 
 class IncomingOrder(NamedTuple):
+    bid_side: abi.Bool
     price: abi.Uint64
     size: abi.Uint64
 
