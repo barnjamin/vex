@@ -6,9 +6,10 @@ ou = OpUp(OpUpMode.OnCall)
 
 class PriorityQueue:
     def __init__(
-        self, box_name: Bytes, box_size: Int, lt: Int, type_spec: abi.TypeSpec
+        self, box_name: str, box_size: Int, lt: Int, type_spec: abi.TypeSpec
     ):
-        self.box_name = box_name
+        self.box_name_str = box_name
+        self.box_name = Bytes(box_name)
         self.box_size = box_size
         self.type_spec = type_spec
         self.lt = lt
@@ -18,8 +19,8 @@ class PriorityQueue:
         return BoxCreate(self.box_name, self.box_size)
 
     def count(self) -> Expr:
-        """count returns the number of elements in the priority queue"""
-        return pq_count()
+        """count returns the number of elements in the priority queue, tracked by global state var"""
+        return pq_count(self.box_name)
 
     def insert(self, thing: abi.BaseType) -> Expr:
         """insert adds a new element in sorted order"""
@@ -51,16 +52,16 @@ class PriorityQueue:
 
 
 ##### pq counter stored in global state
-def pq_count():
-    return App.globalGet(resting_orders_key)
+def pq_count(key):
+    return App.globalGet(key)
 
 
-def pq_count_incr():
-    return App.globalPut(resting_orders_key, pq_count() + Int(1))
+def pq_count_incr(key):
+    return App.globalPut(key, pq_count(key) + Int(1))
 
 
-def pq_count_decr():
-    return App.globalPut(resting_orders_key, pq_count() - Int(1))
+def pq_count_decr(key):
+    return App.globalPut(key, pq_count(key) - Int(1))
 
 
 # pq idx helpers
@@ -121,11 +122,11 @@ def unsorted(a, b, lt):
 def pq_insert(key, val, sort):
     return Seq(
         # Write the first element in the last spot
-        pq_write(key, pq_count(), val),
+        pq_write(key, pq_count(key), val),
         # Restore heap invariant starting with the last element
-        pq_upheap(key, pq_count(), Len(val), sort),
+        pq_upheap(key, pq_count(key), Len(val), sort),
         # Increment the counter
-        pq_count_incr(),
+        pq_count_incr(key),
     )
 
 
@@ -135,13 +136,13 @@ def pq_pop(key, len, sort):
         # Read the top element
         (top := ScratchVar()).store(BoxExtract(key, Int(0), len)),
         # Decrement the counter so we have the correct last element
-        pq_count_decr(),
+        pq_count_decr(key),
         # Swap last for first
-        pq_swap(key, Int(0), pq_count(), len),
+        pq_swap(key, Int(0), pq_count(key), len),
         # Restore heap property
         pq_downheap(key, Int(0), len, sort),
         # Zero out bytes for the last one
-        pq_zero(key, pq_count(), len),
+        pq_zero(key, pq_count(key), len),
         # Return the top element
         top.load(),
     )
@@ -151,13 +152,13 @@ def pq_pop(key, len, sort):
 def pq_remove(key, idx, len, sort):
     return Seq(
         # Decrement the counter
-        pq_count_decr(),
+        pq_count_decr(key),
         # Swap the index to remove for last
-        pq_swap(key, idx, pq_count(), len),
+        pq_swap(key, idx, pq_count(key), len),
         # Restore heap invariant
         pq_downheap(key, idx, len, sort),
         # Zero out bytes for the last one (the one we're removing)
-        pq_zero(key, pq_count(), len),
+        pq_zero(key, pq_count(key), len),
     )
 
 
@@ -178,14 +179,14 @@ def pq_swap(key, aidx, bidx, len):
 def pq_search(key, val):
     i = ScratchVar()
     init = i.store(Int(0))
-    cond = i.load() < pq_count()
+    cond = i.load() < pq_count(key)
     iter = i.store(i.load() + Int(1))
     return Seq(
         For(init, cond, iter).Do(
             If(val == pq_read(key, i.load(), Len(val)), Return(i.load()))
         ),
         # lie
-        pq_count() + Int(1),
+        pq_count(key) + Int(1),
     )
 
 
@@ -222,7 +223,7 @@ def pq_downheap(key, idx, len, sort_lt):
     we preferr to swap the right element if both are larger
     """
     return If(
-        idx < pq_count(),
+        idx < pq_count(key),
         Seq(
             ou.ensure_budget(Int(500)),
             (curr_idx := ScratchVar()).store(idx),
@@ -230,7 +231,7 @@ def pq_downheap(key, idx, len, sort_lt):
             (right_idx := ScratchVar()).store(child_idx_right(idx)),
             # Check the left side first
             If(
-                left_idx.load() < pq_count(),
+                left_idx.load() < pq_count(key),
                 If(
                     unsorted(
                         pq_read(key, left_idx.load(), len),
@@ -242,7 +243,7 @@ def pq_downheap(key, idx, len, sort_lt):
             ),
             # Check the right side second
             If(
-                right_idx.load() < pq_count(),
+                right_idx.load() < pq_count(key),
                 If(
                     unsorted(
                         pq_read(key, right_idx.load(), len),

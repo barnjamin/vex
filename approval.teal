@@ -1,6 +1,6 @@
 #pragma version 7
 intcblock 0 1 2 24 500 32768
-bytecblock 0x72657374696e675f6f7264657273 0x6269645f626f6f6b 0x068101 0x151f7c75 0x736571
+bytecblock 0x6269645f626f6f6b 0x068101 0x151f7c75 0x736571 0x61736b5f626f6f6b
 txn ApplicationID
 intc_0 // 0
 ==
@@ -132,7 +132,7 @@ txna ApplicationArgs 1
 btoi
 callsub readorder_13
 store 2
-bytec_3 // 0x151f7c75
+bytec_2 // 0x151f7c75
 load 2
 concat
 log
@@ -141,7 +141,7 @@ return
 main_l22:
 callsub fillroot_12
 store 1
-bytec_3 // 0x151f7c75
+bytec_2 // 0x151f7c75
 load 1
 concat
 log
@@ -150,7 +150,7 @@ return
 main_l23:
 callsub peekroot_11
 store 0
-bytec_3 // 0x151f7c75
+bytec_2 // 0x151f7c75
 load 0
 concat
 log
@@ -234,7 +234,7 @@ store 11
 store 10
 store 9
 load 9
-bytec_0 // "resting_orders"
+load 9
 app_global_get
 load 10
 len
@@ -242,14 +242,14 @@ len
 load 10
 box_replace
 load 9
-bytec_0 // "resting_orders"
+load 9
 app_global_get
 load 10
 len
 load 11
 callsub pqupheap_6
-bytec_0 // "resting_orders"
-bytec_0 // "resting_orders"
+load 9
+load 9
 app_global_get
 intc_1 // 1
 +
@@ -266,15 +266,15 @@ intc_0 // 0
 load 29
 box_extract
 store 31
-bytec_0 // "resting_orders"
-bytec_0 // "resting_orders"
+load 28
+load 28
 app_global_get
 intc_1 // 1
 -
 app_global_put
 load 28
 intc_0 // 0
-bytec_0 // "resting_orders"
+load 28
 app_global_get
 load 29
 callsub pqswap_4
@@ -284,7 +284,7 @@ load 29
 load 30
 callsub pqdownheap_7
 load 28
-bytec_0 // "resting_orders"
+load 28
 app_global_get
 load 29
 bzero
@@ -302,15 +302,15 @@ store 45
 store 44
 store 43
 store 42
-bytec_0 // "resting_orders"
-bytec_0 // "resting_orders"
+load 42
+load 42
 app_global_get
 intc_1 // 1
 -
 app_global_put
 load 42
 load 43
-bytec_0 // "resting_orders"
+load 42
 app_global_get
 load 44
 callsub pqswap_4
@@ -320,7 +320,7 @@ load 44
 load 45
 callsub pqdownheap_7
 load 42
-bytec_0 // "resting_orders"
+load 42
 app_global_get
 load 44
 bzero
@@ -375,7 +375,7 @@ intc_0 // 0
 store 48
 pqsearch_5_l1:
 load 48
-bytec_0 // "resting_orders"
+load 46
 app_global_get
 <
 bz pqsearch_5_l5
@@ -399,7 +399,7 @@ pqsearch_5_l4:
 load 48
 retsub
 pqsearch_5_l5:
-bytec_0 // "resting_orders"
+load 46
 app_global_get
 intc_1 // 1
 +
@@ -490,9 +490,9 @@ pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_2 // 0x068101
+bytec_1 // 0x068101
 itxn_field ApprovalProgram
-bytec_2 // 0x068101
+bytec_1 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
 b pqupheap_6_l2
@@ -506,7 +506,7 @@ store 34
 store 33
 store 32
 load 33
-bytec_0 // "resting_orders"
+load 32
 app_global_get
 <
 bz pqdownheap_7_l12
@@ -534,13 +534,13 @@ intc_2 // 2
 +
 store 39
 load 38
-bytec_0 // "resting_orders"
+load 32
 app_global_get
 <
 bnz pqdownheap_7_l9
 pqdownheap_7_l4:
 load 39
-bytec_0 // "resting_orders"
+load 32
 app_global_get
 <
 bnz pqdownheap_7_l7
@@ -624,9 +624,9 @@ pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_2 // 0x068101
+bytec_1 // 0x068101
 itxn_field ApprovalProgram
-bytec_2 // 0x068101
+bytec_1 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
 b pqdownheap_7_l2
@@ -635,10 +635,10 @@ retsub
 
 // assign_sequence
 assignsequence_8:
-bytec 4 // "seq"
+bytec_3 // "seq"
 app_global_get
 store 27
-bytec 4 // "seq"
+bytec_3 // "seq"
 load 27
 intc_1 // 1
 +
@@ -648,7 +648,7 @@ retsub
 
 // bootstrap
 bootstrap_9:
-bytec 4 // "seq"
+bytec_3 // "seq"
 intc_0 // 0
 app_global_put
 pushbytes 0x626964 // "bid"
@@ -660,14 +660,17 @@ app_global_put
 pushbytes 0x6d6964 // "mid"
 intc_0 // 0
 app_global_put
-bytec_0 // "resting_orders"
+bytec 4 // "ask_book"
+intc_0 // 0
+app_global_put
+bytec_0 // "bid_book"
 intc_0 // 0
 app_global_put
 intc 5 // 32768
-pushbytes 0x61736b5f626f6f6b // "ask_book"
+bytec 4 // "ask_book"
 box_create
 intc 5 // 32768
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 box_create
 retsub
 
@@ -693,7 +696,7 @@ load 6
 itob
 concat
 store 8
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 load 8
 intc_0 // 0
 callsub pqinsert_1
@@ -701,7 +704,7 @@ retsub
 
 // peek_root
 peekroot_11:
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 intc_0 // 0
 intc_3 // 24
 *
@@ -711,7 +714,7 @@ retsub
 
 // fill_root
 fillroot_12:
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 intc_3 // 24
 intc_0 // 0
 callsub pqpop_2
@@ -720,7 +723,7 @@ retsub
 // read_order
 readorder_13:
 store 3
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 load 3
 intc_3 // 24
 *
@@ -731,11 +734,11 @@ retsub
 // cancel_order
 cancelorder_14:
 store 40
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 load 40
 callsub pqsearch_5
 store 41
-bytec_1 // "bid_book"
+bytec_0 // "bid_book"
 load 41
 intc_3 // 24
 intc_0 // 0

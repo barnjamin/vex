@@ -7,11 +7,9 @@ from algosdk.future.transaction import StateSchema
 class Application:
     globals: List["GlobalStorageValue"]
     locals: List["LocalStorageValue"]
-
     router: Router
 
-    def __init__(self, router: Router):
-        self.router = router
+    def __init__(self):
 
         for gv in self.globals:
             setattr(self, gv.name, gv)

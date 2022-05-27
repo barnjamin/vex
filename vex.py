@@ -7,6 +7,9 @@ from priority_queue import PriorityQueue
 kb = 2 ** 10
 box_size = Int(32 * kb)
 
+ask_pq = PriorityQueue("ask_book", box_size, Int(1), RestingOrderType)
+bid_pq = PriorityQueue("bid_book", box_size, Int(0), RestingOrderType)
+
 
 class Vex(Application):
     globals: List[GlobalStorageValue] = [
@@ -16,14 +19,12 @@ class Vex(Application):
         GlobalStorageValue("lot_a", TealType.uint64, immutable=True),
         GlobalStorageValue("lot_b", TealType.uint64, immutable=True),
         GlobalStorageValue("decimals", TealType.uint64, immutable=True),
+
         # Updated as needed
         GlobalStorageValue("seq", TealType.uint64),
         GlobalStorageValue("bid", TealType.uint64),
         GlobalStorageValue("ask", TealType.uint64),
         GlobalStorageValue("mid", TealType.uint64),
-        # Used by pq
-        GlobalStorageValue("resting_orders", TealType.uint64),
-        # GlobalStorageValue("resting_asks", TealType.uint64),
     ]
 
     locals: List[LocalStorageValue] = [
@@ -32,28 +33,28 @@ class Vex(Application):
         LocalStorageValue("orders", TealType.bytes),
     ]
 
-
-router = Router(
-    "vex",
-    BareCallActions(
-        no_op=OnCompleteAction.create_only(Approve()),
-        update_application=OnCompleteAction.always(
-            Return(Txn.sender() == Global.creator_address())
+    router = Router(
+        "vex",
+        BareCallActions(
+            no_op=OnCompleteAction.create_only(Approve()),
+            update_application=OnCompleteAction.always(
+                Return(Txn.sender() == Global.creator_address())
+            ),
+            delete_application=OnCompleteAction.always(
+                Return(Txn.sender() == Global.creator_address())
+            ),
+            opt_in=OnCompleteAction.always(Reject()),
+            clear_state=OnCompleteAction.always(Reject()),
+            close_out=OnCompleteAction.always(Reject()),
         ),
-        delete_application=OnCompleteAction.always(
-            Return(Txn.sender() == Global.creator_address())
-        ),
-        opt_in=OnCompleteAction.always(Reject()),
-        clear_state=OnCompleteAction.always(Reject()),
-        close_out=OnCompleteAction.always(Reject()),
-    ),
-)
+    )
 
 
-vex = Vex(router)
+vex = Vex()
 
-ask_pq = PriorityQueue(Bytes("ask_book"), box_size, Int(1), RestingOrderType)
-bid_pq = PriorityQueue(Bytes("bid_book"), box_size, Int(0), RestingOrderType)
+# Appending to globals array _after_ init means they're not set as attributes
+vex.globals.append(GlobalStorageValue(ask_pq.box_name_str, TealType.uint64))
+vex.globals.append(GlobalStorageValue(bid_pq.box_name_str, TealType.uint64))
 
 
 @Subroutine(TealType.uint64)
@@ -104,18 +105,18 @@ def cancel_order(ro: RestingOrderType):
     return bid_pq.delete(ro)
 
 
-router.add_method_handler(bootstrap)
-router.add_method_handler(new_order)
-router.add_method_handler(peek_root)
-router.add_method_handler(fill_root)
-router.add_method_handler(read_order)
-router.add_method_handler(cancel_order)
+vex.router.add_method_handler(bootstrap)
+vex.router.add_method_handler(new_order)
+vex.router.add_method_handler(peek_root)
+vex.router.add_method_handler(fill_root)
+vex.router.add_method_handler(read_order)
+vex.router.add_method_handler(cancel_order)
 
 if __name__ == "__main__":
     import os
     import json
 
-    approval, clear, spec = router.compile_program(
+    approval, clear, spec = vex.router.compile_program(
         version=7,
         assembleConstants=True,
         optimize=OptimizeOptions(scratch_slots=True),
