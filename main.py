@@ -31,12 +31,4 @@ if __name__ == "__main__":
     for x in range(100):
         price, size = random.randint(50, 100), 10
         bid = x % 2 == 0
-        client.new_order(signer, [(bid, price, size)], boxes=boxes)
-
-    for x in range(orders // 2):
-        result = client.fill_root_bid(signer, [], boxes=boxes)
-        print(f"Filled Bid with {result}")
-
-    for x in range(orders // 2):
-        result = client.fill_root_ask(signer, [], boxes=boxes)
-        print(f"Filled Ask with {result}")
+        print("{} Filled {}".format("bid" if bid else "ask", client.new_order(signer, [(bid, price, size)], boxes=boxes)))
