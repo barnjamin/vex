@@ -27,8 +27,13 @@ if __name__ == "__main__":
 
     import random
 
-    orders = 100
-    for x in range(100):
+    orders = 500
+    for x in range(orders):
         price, size = random.randint(50, 100), 10
         bid = x % 2 == 0
-        print("{} Filled {}".format("bid" if bid else "ask", client.new_order(signer, [(bid, price, size)], boxes=boxes)))
+        print(
+            "{} Filled {}".format(
+                "bid" if bid else "ask",
+                client.new_order(signer, [(bid, price, size)], boxes=boxes),
+            )
+        )

@@ -76,14 +76,20 @@ def try_fill_bids(price: Expr, size: Expr):
         (ro := RestingOrder()).decode(bid_pq.peek()),
         (resting_price := abi.Uint64()).set(ro.price()),
         (resting_size := abi.Uint64()).set(ro.size()),
-        While(And(bid_pq.count() > Int(0), resting_price.get() >= price, unfilled.load()>Int(0))).Do(
+        While(
+            And(
+                bid_pq.count() > Int(0),
+                unfilled.load() > Int(0),
+                resting_price.get() >= price,
+            )
+        ).Do(
             Seq(
                 (seq := abi.Uint64()).set(ro.sequence()),
                 resting_price.set(ro.price()),
                 resting_size.set(ro.size()),
                 If(
                     resting_size.get() > unfilled.load(),
-                     Seq(
+                    Seq(
                         # Partial fill
                         (new_size := abi.Uint64()).set(
                             resting_size.get() - unfilled.load()
@@ -91,13 +97,13 @@ def try_fill_bids(price: Expr, size: Expr):
                         ro.set(resting_price, new_size, seq),
                         bid_pq.update(Int(0), ro),
                         unfilled.store(Int(0)),
-                     ),
-                     Seq(
+                    ),
+                    Seq(
                         # Full fill
                         bid_pq.remove(Int(0)),
                         unfilled.store(unfilled.load() - resting_size.get()),
                         ro.decode(bid_pq.peek()),
-                     )
+                    ),
                 ),
             )
         ),
@@ -115,14 +121,20 @@ def try_fill_asks(price: Expr, size: Expr):
         (ro := RestingOrder()).decode(ask_pq.peek()),
         (resting_price := abi.Uint64()).set(ro.price()),
         (resting_size := abi.Uint64()).set(ro.size()),
-        While(And(ask_pq.count() > Int(0), resting_price.get() <= price, unfilled.load()>Int(0))).Do(
+        While(
+            And(
+                ask_pq.count() > Int(0),
+                unfilled.load() > Int(0),
+                resting_price.get() <= price,
+            )
+        ).Do(
             Seq(
                 (seq := abi.Uint64()).set(ro.sequence()),
                 resting_price.set(ro.price()),
                 resting_size.set(ro.size()),
                 If(
                     resting_size.get() > unfilled.load(),
-                     Seq(
+                    Seq(
                         # Partial fill of resting
                         (new_size := abi.Uint64()).set(
                             resting_size.get() - unfilled.load()
@@ -130,13 +142,13 @@ def try_fill_asks(price: Expr, size: Expr):
                         ro.set(resting_price, new_size, seq),
                         ask_pq.update(Int(0), ro),
                         unfilled.store(Int(0)),
-                     ),
-                     Seq(
+                    ),
+                    Seq(
                         # Full fill of resting
-                        ask_pq.remove(Int(0)), 
+                        ask_pq.remove(Int(0)),
                         unfilled.store(unfilled.load() - resting_size.get()),
                         ro.decode(ask_pq.peek()),
-                     )
+                    ),
                 ),
             )
         ),
@@ -157,31 +169,34 @@ def new_order(order: IncomingOrderType, *, output: abi.Uint64):
         (price := abi.Uint64()).set(io.price()),
         (size := abi.Uint64()).set(io.size()),
         (remaining_size := abi.Uint64()).set(io.size()),
-        If(bid_side.get(),
+        If(
+            bid_side.get(),
             Seq(
-                remaining_size.set(
-                    try_fill_bids(price.get(), size.get())
-                ),
-                If(remaining_size.get()>Int(0), Seq(
-                    (seq := abi.Uint64()).set(assign_sequence()),
-                    (resting_order := RestingOrder()).set(
-                        price, seq, remaining_size
+                remaining_size.set(try_fill_bids(price.get(), size.get())),
+                If(
+                    remaining_size.get() > Int(0),
+                    Seq(
+                        (seq := abi.Uint64()).set(assign_sequence()),
+                        (resting_order := RestingOrder()).set(
+                            price, seq, remaining_size
+                        ),
+                        bid_pq.insert(resting_order),
                     ),
-                    bid_pq.insert(resting_order),
-                )),
+                ),
             ),
             Seq(
-                remaining_size.set(
-                   try_fill_asks(price.get(), size.get())
-                ),
-                If(remaining_size.get()>Int(0), Seq(
-                    (seq := abi.Uint64()).set(assign_sequence()),
-                    (resting_order := RestingOrder()).set(
-                        price, seq, remaining_size
+                remaining_size.set(try_fill_asks(price.get(), size.get())),
+                If(
+                    remaining_size.get() > Int(0),
+                    Seq(
+                        (seq := abi.Uint64()).set(assign_sequence()),
+                        (resting_order := RestingOrder()).set(
+                            price, seq, remaining_size
+                        ),
+                        ask_pq.insert(resting_order),
                     ),
-                    ask_pq.insert(resting_order),
-                )),
+                ),
             ),
         ),
-        output.set(size.get() - remaining_size.get())
+        output.set(size.get() - remaining_size.get()),
     )

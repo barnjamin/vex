@@ -26,9 +26,9 @@ class NamedTuple(abi.Tuple):
 
 # TODO: add address
 class RestingOrder(NamedTuple):
-    size: abi.Uint64
     price: abi.Uint64
     sequence: abi.Uint64
+    size: abi.Uint64
 
 
 class IncomingOrder(NamedTuple):
