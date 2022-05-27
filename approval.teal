@@ -1,6 +1,6 @@
 #pragma version 7
 intcblock 0 1 2 24 500 32768
-bytecblock 0x72657374696e675f6f7264657273 0x6269645f626f6f6b 0x068101 0x151f7c75 0x73657175656e6365
+bytecblock 0x72657374696e675f6f7264657273 0x6269645f626f6f6b 0x068101 0x151f7c75 0x736571
 txn ApplicationID
 intc_0 // 0
 ==
@@ -162,7 +162,7 @@ callsub neworder_10
 intc_1 // 1
 return
 main_l25:
-callsub bootstrap_8
+callsub bootstrap_9
 intc_1 // 1
 return
 main_l26:
@@ -399,7 +399,10 @@ pqsearch_5_l4:
 load 48
 retsub
 pqsearch_5_l5:
-load 48
+bytec_0 // "resting_orders"
+app_global_get
+intc_1 // 1
++
 retsub
 
 // pq_upheap
@@ -630,30 +633,42 @@ b pqdownheap_7_l2
 pqdownheap_7_l12:
 retsub
 
+// assign_sequence
+assignsequence_8:
+bytec 4 // "seq"
+app_global_get
+store 27
+bytec 4 // "seq"
+load 27
+intc_1 // 1
++
+app_global_put
+load 27
+retsub
+
 // bootstrap
-bootstrap_8:
+bootstrap_9:
+bytec 4 // "seq"
+intc_0 // 0
+app_global_put
+pushbytes 0x626964 // "bid"
+intc_0 // 0
+app_global_put
+pushbytes 0x61736b // "ask"
+intc_0 // 0
+app_global_put
+pushbytes 0x6d6964 // "mid"
+intc_0 // 0
+app_global_put
+bytec_0 // "resting_orders"
+intc_0 // 0
+app_global_put
 intc 5 // 32768
 pushbytes 0x61736b5f626f6f6b // "ask_book"
 box_create
 intc 5 // 32768
 bytec_1 // "bid_book"
 box_create
-bytec 4 // "sequence"
-intc_0 // 0
-app_global_put
-retsub
-
-// assign_sequence
-assignsequence_9:
-bytec 4 // "sequence"
-app_global_get
-store 27
-bytec 4 // "sequence"
-load 27
-intc_1 // 1
-+
-app_global_put
-load 27
 retsub
 
 // new_order
@@ -667,7 +682,7 @@ load 4
 pushint 8 // 8
 extract_uint64
 store 6
-callsub assignsequence_9
+callsub assignsequence_8
 store 7
 load 5
 itob

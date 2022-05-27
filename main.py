@@ -4,9 +4,9 @@ from algosdk.v2client import algod
 from algosdk.future.transaction import *
 from algosdk.atomic_transaction_composer import *
 from algosdk.dryrun_results import *
-from pyteal import OptimizeOptions, compileTeal
+from pyteal import OptimizeOptions
 from deploy import *
-from contract import router
+from vex import vex
 
 host = "http://localhost:4001"
 token = "a" * 64
@@ -17,13 +17,11 @@ accts = get_sandbox_accounts()
 addr, sk = accts[-1]
 signer = AccountTransactionSigner(sk)
 
-approval, clear, iface = router.compile_program(
+approval, clear, iface = vex.router.compile_program(
     version=7,
     assembleConstants=True,
     optimize=OptimizeOptions(scratch_slots=True),
 )
-
-boxes = [BoxReference(0, "ask_book"), BoxReference(0, "bid_book")]
 
 
 def get_method(name: str) -> abi.Method:
@@ -33,8 +31,11 @@ def get_method(name: str) -> abi.Method:
     raise Exception("cant find that method: {}".format(name))
 
 
+boxes = [BoxReference(0, "ask_book"), BoxReference(0, "bid_book")]
+
+
 def create():
-    app_id, app_addr = create_app(client, addr, sk, approval, clear)
+    app_id, app_addr = create_app(client, addr, sk, vex)
     print(f"Created {app_id} with app address {app_addr}")
     return app_id, app_addr
 

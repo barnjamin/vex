@@ -5,6 +5,8 @@ from algosdk.future.transaction import *
 from algosdk.kmd import KMDClient
 from algosdk.atomic_transaction_composer import *
 from algosdk import abi
+from pyteal import OptimizeOptions
+from application import Application
 
 host = "http://localhost:4001"
 token = "a" * 64
@@ -52,25 +54,23 @@ def pay(client: algod.AlgodClient, addr: str, sk: str, rcv: str, amt=int(4e6)):
     wait_for_confirmation(client, txid, 3)
 
 
-def create_app(
-    client: algod.AlgodClient, addr: str, sk: str, approval: str, clear: str
-) -> int:
-    # Get suggested params from network
-    sp = client.suggested_params()
+def create_app(client: algod.AlgodClient, addr: str, sk: str, app: Application) -> int:
 
-    print("Compiling approval program")
-    # Read in approval teal source && compile
+    # Fully compile programs
+    approval, clear, _ = app.router.compile_program(
+        version=7,
+        assembleConstants=True,
+        optimize=OptimizeOptions(scratch_slots=True),
+    )
+
     app_result = client.compile(approval)
     app_bytes = base64.b64decode(app_result["result"])
 
-    print("Compiling clear program")
-    # Read in clear teal source && compile
     clear_result = client.compile(clear)
     clear_bytes = base64.b64decode(clear_result["result"])
 
-    # We dont need no stinkin storage
-    gschema = StateSchema(2, 0)
-    lschema = StateSchema(0, 0)
+    # Get suggested params from network
+    sp = client.suggested_params()
 
     # Create the transaction
     create_txn = ApplicationCreateTxn(
@@ -79,8 +79,8 @@ def create_app(
         0,
         app_bytes,
         clear_bytes,
-        gschema,
-        lschema,
+        app.global_schema(),
+        app.local_schema(),
     )
 
     # Sign it

@@ -1,31 +1,37 @@
+from typing import List
 from pyteal import *
-
+from application import *
 from models import *
 from priority_queue import PriorityQueue
-
 
 kb = 2 ** 10
 box_size = Int(32 * kb)
 
-seq_key = Bytes("sequence")
-ask_book_key = Bytes("ask_book")
-bid_book_key = Bytes("bid_book")
 
+class Vex(Application):
+    globals: List[GlobalStorageValue] = [
+        # Static Config
+        GlobalStorageValue("asset_a", TealType.uint64, immutable=True),
+        GlobalStorageValue("asset_b", TealType.uint64, immutable=True),
+        GlobalStorageValue("lot_a", TealType.uint64, immutable=True),
+        GlobalStorageValue("lot_b", TealType.uint64, immutable=True),
+        GlobalStorageValue("decimals", TealType.uint64, immutable=True),
+        # Updated as needed
+        GlobalStorageValue("seq", TealType.uint64),
+        GlobalStorageValue("bid", TealType.uint64),
+        GlobalStorageValue("ask", TealType.uint64),
+        GlobalStorageValue("mid", TealType.uint64),
+        # Used by pq
+        GlobalStorageValue("resting_orders", TealType.uint64),
+        # GlobalStorageValue("resting_asks", TealType.uint64),
+    ]
 
-@Subroutine(TealType.uint64)
-def assign_sequence():
-    return Seq(
-        (sv := ScratchVar()).store(App.globalGet(seq_key)),
-        App.globalPut(seq_key, sv.load() + Int(1)),
-        sv.load(),
-    )
+    locals: List[LocalStorageValue] = [
+        LocalStorageValue("bal_a", TealType.uint64),
+        LocalStorageValue("bal_b", TealType.uint64),
+        LocalStorageValue("orders", TealType.bytes),
+    ]
 
-
-ASK_SORT = Int(1)
-BID_SORT = Int(0)
-
-ask_pq = PriorityQueue(ask_book_key, box_size, ASK_SORT, RestingOrderType)
-bid_pq = PriorityQueue(bid_book_key, box_size, BID_SORT, RestingOrderType)
 
 router = Router(
     "vex",
@@ -44,13 +50,24 @@ router = Router(
 )
 
 
+vex = Vex(router)
+
+ask_pq = PriorityQueue(Bytes("ask_book"), box_size, Int(1), RestingOrderType)
+bid_pq = PriorityQueue(Bytes("bid_book"), box_size, Int(0), RestingOrderType)
+
+
+@Subroutine(TealType.uint64)
+def assign_sequence():
+    return Seq(
+        (sv := ScratchVar()).store(vex.seq),
+        vex.seq(sv.load() + Int(1)),
+        sv.load(),
+    )
+
+
 @ABIReturnSubroutine
 def bootstrap():
-    return Seq(
-        BoxCreate(ask_book_key, box_size),
-        BoxCreate(bid_book_key, box_size),
-        App.globalPut(seq_key, Int(0)),
-    )
+    return Seq(vex.initialize_globals(), ask_pq.initialize(), bid_pq.initialize())
 
 
 @ABIReturnSubroutine

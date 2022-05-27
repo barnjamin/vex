@@ -14,6 +14,9 @@ class PriorityQueue:
         self.lt = lt
         self.type_size = Int(abi.size_of(self.type_spec))
 
+    def initialize(self) -> Expr:
+        return BoxCreate(self.box_name, self.box_size)
+
     def count(self) -> Expr:
         """count returns the number of elements in the priority queue"""
         return pq_count()
