@@ -53,8 +53,10 @@ class ApplicationClient:
     def create(
         self, signer: AccountTransactionSigner, seed_amt: int = 0
     ) -> Tuple[int, str]:
+
         approval_result = self.client.compile(self.approval)
         approval_program = base64.b64decode(approval_result["result"])
+        print(len(approval_program))
 
         clear_result = self.client.compile(self.clear)
         clear_program = base64.b64decode(clear_result["result"])
@@ -144,8 +146,5 @@ class ApplicationClient:
             **kwargs,
         )
         result = ctx.execute(self.client, 2)
-        # for res in result.abi_results:
-        #    if 'logs' in res.tx_info:
-        #        print([base64.b64decode(l) for l in res.tx_info['logs']])
 
         return result.abi_results[0].return_value
