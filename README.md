@@ -24,11 +24,19 @@ This design should:
 TODO:
 
 [x] Priority Queue to hold orders
+
 [x] Order Matching
+
 [ ] Order Cancel
+
 [ ] Order Change Volume
+
 [ ] Store summary data (mid/bid/ask/DOM)
+
 [ ] Provide API to retreive current book
+
 [ ] Map address (32 bytes) to integer (8 bytes)
+
 [ ] Do transfer on successful order match
+
 [ ] Benchmark ops 
