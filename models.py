@@ -30,12 +30,6 @@ class RestingOrder(NamedTuple):
     size: abi.Uint64
 
 
-class IncomingOrder(NamedTuple):
-    bid_side: abi.Bool
-    price: abi.Uint64
-    size: abi.Uint64
-
-
 class IncomingOrderCancel(NamedTuple):
     price: abi.Uint64
     address: abi.Address
@@ -49,6 +43,5 @@ class IncomingOrderChangeSize(NamedTuple):
 
 
 RestingOrderType = RestingOrder().get_type()
-IncomingOrderType = IncomingOrder().get_type()
 IncomingOrderCancelType = IncomingOrderCancel().get_type()
 IncomingOrderChangeSizeType = IncomingOrderChangeSize().get_type()

@@ -161,15 +161,13 @@ def bootstrap():
 
 
 @vex.router.method
-def new_order(order: IncomingOrderType, *, output: abi.Uint64):
+def new_order(
+    bid: abi.Bool, price: abi.Uint64, size: abi.Uint64, *, output: abi.Uint64
+):
     return Seq(
-        (io := IncomingOrder()).decode(order.encode()),
-        (bid_side := abi.Bool()).set(io.bid_side()),
-        (price := abi.Uint64()).set(io.price()),
-        (size := abi.Uint64()).set(io.size()),
-        (remaining_size := abi.Uint64()).set(io.size()),
+        (remaining_size := abi.Uint64()).set(size.get()),
         If(
-            bid_side.get(),
+            bid.get(),
             Seq(
                 remaining_size.set(try_fill_bids(price.get(), size.get())),
                 If(

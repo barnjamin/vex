@@ -34,6 +34,6 @@ if __name__ == "__main__":
         print(
             "{} Filled {}".format(
                 "bid" if bid else "ask",
-                client.new_order(signer, [(bid, price, size)], boxes=boxes),
+                client.new_order(signer, [bid, price, size], boxes=boxes),
             )
         )
