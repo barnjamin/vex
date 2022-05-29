@@ -23,7 +23,15 @@ class NamedTuple(abi.Tuple):
         return super().type_spec().__str__()
 
 
-# TODO: add address
+class VexAccount(NamedTuple):
+    address: abi.Address
+    balance_a: abi.Uint64
+    balance_b: abi.Uint64
+    reserved_a: abi.Uint64
+    reserved_b: abi.Uint64
+    credits: abi.Uint64
+
+
 class RestingOrder(NamedTuple):
     price: abi.Uint64
     sequence: abi.Uint64

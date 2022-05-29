@@ -11,6 +11,23 @@ ask_pq = PriorityQueue("ask_book", box_size, Int(1), RestingOrderType)
 bid_pq = PriorityQueue("bid_book", box_size, Int(0), RestingOrderType)
 
 
+class AccountStorage:
+    def __init__(self, box_name, type: abi.BaseType):
+        self.box_name = box_name
+        self.type = type
+        self.ts = Int(abi.size_of(type.type_spec()))
+
+    def get(self, idx: Int):
+        return BoxExtract(self.box_name, idx * self.ts, self.ts)
+
+    def append(self, type: abi.BaseType) -> abi.Uint64:
+        pass
+
+
+# vet = VexAccount().get_type()
+# accts = AccountStorage("accts", vet)
+
+
 class Vex(Application):
     globals: List[GlobalStorageValue] = [
         # Static Config
@@ -68,90 +85,66 @@ def assign_sequence():
 @Subroutine(TealType.uint64)
 def try_fill_bids(price: Expr, size: Expr):
     return Seq(
-        # If theres nothing in the book, dip
-        If(bid_pq.count() == Int(0), Return(size)),
-        # Setup stuff for looping
-        (unfilled := ScratchVar()).store(size),
+        # If theres nothing in the book or empty size, dip
+        If(Or(bid_pq.count() == Int(0), size == Int(0)), Return(size)),
+        # Peek the book and try to fill
         (ro := RestingOrder()).decode(bid_pq.peek()),
         (resting_price := abi.Uint64()).set(ro.price()),
         (resting_size := abi.Uint64()).set(ro.size()),
-        While(
-            And(
-                bid_pq.count() > Int(0),
-                unfilled.load() > Int(0),
-                resting_price.get() >= price,
-            )
-        ).Do(
+        # Next order not fillable
+        If(resting_price.get() < price, Return(size)),
+        If(
+            # Is it a full or partial of resting
+            resting_size.get() <= size,
             Seq(
+                # Full fill of resting
+                bid_pq.remove(Int(0)),
+                try_fill_bids(price, size - resting_size.get()),
+            ),
+            Seq(
+                # Partial fill of resting
                 (seq := abi.Uint64()).set(ro.sequence()),
-                resting_price.set(ro.price()),
-                resting_size.set(ro.size()),
-                If(
-                    resting_size.get() > unfilled.load(),
-                    Seq(
-                        # Partial fill
-                        (new_size := abi.Uint64()).set(
-                            resting_size.get() - unfilled.load()
-                        ),
-                        ro.set(resting_price, new_size, seq),
-                        bid_pq.update(Int(0), ro),
-                        unfilled.store(Int(0)),
-                    ),
-                    Seq(
-                        # Full fill
-                        bid_pq.remove(Int(0)),
-                        unfilled.store(unfilled.load() - resting_size.get()),
-                        ro.decode(bid_pq.peek()),
-                    ),
-                ),
-            )
+                (new_size := abi.Uint64()).set(resting_size.get() - size),
+                ro.set(resting_price, seq, new_size),
+                # Update resting with new size
+                bid_pq.update(Int(0), ro),
+                # Return 0 for size left fo fill
+                Int(0),
+            ),
         ),
-        unfilled.load(),
     )
 
 
 @Subroutine(TealType.uint64)
 def try_fill_asks(price: Expr, size: Expr):
     return Seq(
-        # If theres nothing in the book, dip
-        If(ask_pq.count() == Int(0), Return(size)),
-        # Setup stuff for looping
-        (unfilled := ScratchVar()).store(size),
+        # If theres nothing in the book or empty size, dip
+        If(Or(ask_pq.count() == Int(0), size == Int(0)), Return(size)),
+        # Peek the book and try to fill
         (ro := RestingOrder()).decode(ask_pq.peek()),
         (resting_price := abi.Uint64()).set(ro.price()),
         (resting_size := abi.Uint64()).set(ro.size()),
-        While(
-            And(
-                ask_pq.count() > Int(0),
-                unfilled.load() > Int(0),
-                resting_price.get() <= price,
-            )
-        ).Do(
+        # Next order not fillable
+        If(resting_price.get() > price, Return(size)),
+        If(
+            # Is it a full or partial of resting
+            resting_size.get() <= size,
             Seq(
+                # Full fill of resting
+                ask_pq.remove(Int(0)),
+                try_fill_asks(price, size - resting_size.get()),
+            ),
+            Seq(
+                # Partial fill of resting
                 (seq := abi.Uint64()).set(ro.sequence()),
-                resting_price.set(ro.price()),
-                resting_size.set(ro.size()),
-                If(
-                    resting_size.get() > unfilled.load(),
-                    Seq(
-                        # Partial fill of resting
-                        (new_size := abi.Uint64()).set(
-                            resting_size.get() - unfilled.load()
-                        ),
-                        ro.set(resting_price, new_size, seq),
-                        ask_pq.update(Int(0), ro),
-                        unfilled.store(Int(0)),
-                    ),
-                    Seq(
-                        # Full fill of resting
-                        ask_pq.remove(Int(0)),
-                        unfilled.store(unfilled.load() - resting_size.get()),
-                        ro.decode(ask_pq.peek()),
-                    ),
-                ),
-            )
+                (new_size := abi.Uint64()).set(resting_size.get() - size),
+                ro.set(resting_price, seq, new_size),
+                # Update resting with new size
+                ask_pq.update(Int(0), ro),
+                # Return 0 for size left fo fill
+                Int(0),
+            ),
         ),
-        unfilled.load(),
     )
 
 

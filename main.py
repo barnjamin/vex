@@ -58,7 +58,6 @@ if __name__ == "__main__":
 
     mid = 50
 
-
     if True:
         app_id, app_addr = client.create(signer, int(4e8))
         print(f"Created {app_id} with app address {app_addr}")
@@ -72,9 +71,9 @@ if __name__ == "__main__":
 
             start, stop = mid - 10, 100
             if not bid:
-                start, stop = 0, mid + 10 
+                start, stop = 0, mid + 10
 
-            price, size = random.randint(start, stop), random.randint(1, 10)  * 10
+            price, size = random.randint(start, stop), random.randint(1, 10) * 10
             filled = client.new_order(signer, [bid, price, size], boxes=boxes)
             print("{} Filled {}".format(side, filled))
 
@@ -102,6 +101,7 @@ if __name__ == "__main__":
         abs.add_order(o)
 
     import matplotlib.pyplot as plt
+
     plt.bar(*bbs.dom())
     plt.bar(*abs.dom())
-    plt.savefig('dom.png')
+    plt.savefig("dom.png")
