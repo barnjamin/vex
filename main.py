@@ -40,33 +40,43 @@ class OrderBookSide:
         self.orders = []
         self.volume = {}
 
-    def add_order_from_bytes(self, b):
-        self.add_order()
-
     def add_order(self, order: Order):
         if order.price not in self.volume:
             self.volume[order.price] = 0
         self.volume[order.price] += order.size
         self.orders.append(order)
 
-    def summary(self):
-        print(self.volume)
+    def dom(self):
+        items = sorted(self.volume.items())
+        return ([i[0] for i in items], [i[1] for i in items])
 
 
 if __name__ == "__main__":
 
-    app_id, app_addr = client.create(signer, int(4e8))
-    print(f"Created {app_id} with app address {app_addr}")
-
-    result = client.bootstrap(signer, [], boxes=boxes)
-    print(result)
-
     orders = 500
-    for x in range(orders):
-        price, size = random.randint(50, 100), 10
-        bid = x % 2 == 0
-        filled = client.new_order(signer, [bid, price, size], boxes=boxes)
-        print("{} Filled {}".format("bid" if bid else "ask", filled))
+    app_id = 8104
+
+    mid = 50
+
+
+    if True:
+        app_id, app_addr = client.create(signer, int(4e8))
+        print(f"Created {app_id} with app address {app_addr}")
+
+        result = client.bootstrap(signer, [], boxes=boxes)
+        print(result)
+
+        for x in range(orders):
+            bid = x % 2 == 0
+            side = "bid" if bid else "ask"
+
+            start, stop = mid - 10, 100
+            if not bid:
+                start, stop = 0, mid + 10 
+
+            price, size = random.randint(start, stop), random.randint(1, 10)  * 10
+            filled = client.new_order(signer, [bid, price, size], boxes=boxes)
+            print("{} Filled {}".format(side, filled))
 
     ## Start to build off chain representation
     order_size = 24
@@ -91,5 +101,7 @@ if __name__ == "__main__":
 
         abs.add_order(o)
 
-    bbs.summary()
-    abs.summary()
+    import matplotlib.pyplot as plt
+    plt.bar(*bbs.dom())
+    plt.bar(*abs.dom())
+    plt.savefig('dom.png')
