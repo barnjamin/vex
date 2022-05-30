@@ -28,51 +28,6 @@ class AccountStorage:
 # accts = AccountStorage("accts", vet)
 
 
-class Vex(Application):
-    globals: List[GlobalStorageValue] = [
-        # Static Config
-        GlobalStorageValue("asset_a", TealType.uint64, immutable=True),
-        GlobalStorageValue("asset_b", TealType.uint64, immutable=True),
-        GlobalStorageValue("lot_a", TealType.uint64, immutable=True),
-        GlobalStorageValue("lot_b", TealType.uint64, immutable=True),
-        GlobalStorageValue("decimals", TealType.uint64, immutable=True),
-        # Updated as needed
-        GlobalStorageValue("seq", TealType.uint64),
-        GlobalStorageValue("bid", TealType.uint64),
-        GlobalStorageValue("ask", TealType.uint64),
-        GlobalStorageValue("mid", TealType.uint64),
-    ]
-
-    locals: List[LocalStorageValue] = [
-        LocalStorageValue("bal_a", TealType.uint64),
-        LocalStorageValue("bal_b", TealType.uint64),
-        LocalStorageValue("orders", TealType.bytes),
-    ]
-
-    router = Router(
-        "vex",
-        BareCallActions(
-            no_op=OnCompleteAction.create_only(Approve()),
-            update_application=OnCompleteAction.always(
-                Return(Txn.sender() == Global.creator_address())
-            ),
-            delete_application=OnCompleteAction.always(
-                Return(Txn.sender() == Global.creator_address())
-            ),
-            opt_in=OnCompleteAction.always(Reject()),
-            clear_state=OnCompleteAction.always(Reject()),
-            close_out=OnCompleteAction.always(Reject()),
-        ),
-    )
-
-
-vex = Vex()
-
-# Appending to globals array _after_ init means they're not set as attributes
-vex.globals.append(GlobalStorageValue(ask_pq.box_name_str, TealType.uint64))
-vex.globals.append(GlobalStorageValue(bid_pq.box_name_str, TealType.uint64))
-
-
 @Subroutine(TealType.uint64)
 def assign_sequence():
     return Seq(
@@ -80,6 +35,7 @@ def assign_sequence():
         vex.seq(sv.load() + Int(1)),
         sv.load(),
     )
+
 
 
 @Subroutine(TealType.uint64)
@@ -148,10 +104,54 @@ def try_fill_asks(price: Expr, size: Expr):
     )
 
 
+class Vex(Application):
+    globals: List[GlobalStorageValue] = [
+        # Static Config
+        GlobalStorageValue("asset_a", TealType.uint64, protected=True),
+        GlobalStorageValue("asset_b", TealType.uint64, protected=True),
+        GlobalStorageValue("lot_a", TealType.uint64, protected=True),
+        GlobalStorageValue("lot_b", TealType.uint64, protected=True),
+        GlobalStorageValue("decimals", TealType.uint64, protected=True),
+        # Updated as needed
+        GlobalStorageValue("seq", TealType.uint64),
+        GlobalStorageValue("bid", TealType.uint64),
+        GlobalStorageValue("ask", TealType.uint64),
+        GlobalStorageValue("mid", TealType.uint64),
+    ]
+
+    locals: List[LocalStorageValue] = [
+        LocalStorageValue("bal_a", TealType.uint64),
+        LocalStorageValue("bal_b", TealType.uint64),
+        LocalStorageValue("orders", TealType.bytes),
+    ]
+
+    router = Router(
+        "vex",
+        BareCallActions(
+            no_op=OnCompleteAction.create_only(Approve()),
+            update_application=OnCompleteAction.always(
+                Return(Txn.sender() == Global.creator_address())
+            ),
+            delete_application=OnCompleteAction.always(
+                Return(Txn.sender() == Global.creator_address())
+            ),
+            opt_in=OnCompleteAction.always(Reject()),
+            clear_state=OnCompleteAction.always(Reject()),
+            close_out=OnCompleteAction.always(Reject()),
+        ),
+    )
+
+
+vex = Vex()
+
+# Appending to globals array _after_ init means they're not set as attributes
+vex.globals.append(GlobalStorageValue(ask_pq.box_name_str, TealType.uint64))
+vex.globals.append(GlobalStorageValue(bid_pq.box_name_str, TealType.uint64))
+
+# Routable methods
 @vex.router.method
 def bootstrap():
     return Seq(vex.initialize_globals(), ask_pq.initialize(), bid_pq.initialize())
-
 
 @vex.router.method
 def new_order(
@@ -190,3 +190,16 @@ def new_order(
         ),
         output.set(size.get() - remaining_size.get()),
     )
+
+#@vex.router.method
+#def cancel_order(price: abi.Uint64, seq: abi.Uint64, size: abi.Uint64, acct_id: abi.Uint64):
+#    pass
+#
+#@vex.router.method
+#def modify_order(price: abi.Uint64, seq: abi.Uint64, size: abi.Uint64, acct_id: abi.Uint64, new_size: abi.Uint64):
+#    pass
+
+#@vex.router.method
+#def register(acct: abi.Account, asset_a: abi.Asset, asset_b: abi.Asset):
+#    pass
+#

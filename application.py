@@ -14,7 +14,7 @@ class Application:
             setattr(self, gv.name, gv)
 
     def initialize_globals(self):
-        return Seq(*[g.set_default() for g in self.globals if not g.immutable])
+        return Seq(*[g.set_default() for g in self.globals if not g.protected])
 
     def local_schema(self) -> StateSchema:
         return StateSchema(
@@ -33,13 +33,13 @@ class GlobalStorageValue(Expr):
     name: str
     key: Bytes
     stack_type: TealType
-    immutable: bool
+    protected: bool
 
-    def __init__(self, key: str, stack_type: TealType, immutable: bool = False):
+    def __init__(self, key: str, stack_type: TealType, protected: bool = False):
         self.name = key
         self.key = Bytes(key)
         self.stack_type = stack_type
-        self.immutable = immutable
+        self.protected = protected
 
     def has_return(self) -> bool:
         return super().has_return()
@@ -57,7 +57,7 @@ class GlobalStorageValue(Expr):
         return self.set(val)
 
     def set_default(self) -> Expr:
-        if self.immutable:
+        if self.protected:
             raise Exception("Can't set default on immutable global storage field")
 
         if self.stack_type == TealType.uint64:
@@ -66,7 +66,7 @@ class GlobalStorageValue(Expr):
             return App.globalPut(self.key, Bytes(""))
 
     def set(self, val: Expr) -> Expr:
-        if self.immutable:
+        if self.protected:
             return Seq(
                 v := App.globalGetEx(Int(0), self.key),
                 Assert(Not(v.hasValue())),

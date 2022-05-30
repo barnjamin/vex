@@ -1,0 +1,1 @@
+{"name": "vex", "methods": [{"name": "bootstrap", "args": [], "returns": {"type": "void"}}, {"name": "new_order", "args": [{"type": "bool"}, {"type": "uint64"}, {"type": "uint64"}], "returns": {"type": "uint64"}}], "desc": null, "networks": {}}

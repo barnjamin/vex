@@ -1,0 +1,23 @@
+#pragma version 7
+intcblock 0
+txn NumAppArgs
+intc_0 // 0
+==
+bnz main_l2
+err
+main_l2:
+txn ApplicationID
+intc_0 // 0
+!=
+bnz main_l6
+txn ApplicationID
+intc_0 // 0
+==
+bnz main_l5
+err
+main_l5:
+intc_0 // 0
+return
+main_l6:
+intc_0 // 0
+return
