@@ -1,3 +1,4 @@
+from venv import create
 from pyteal import *
 from application import *
 from models import *
@@ -8,9 +9,9 @@ vex = Application(
         # Static Config
         GlobalStorageValue("asset_a", TealType.uint64, protected=True),
         GlobalStorageValue("asset_b", TealType.uint64, protected=True),
-        GlobalStorageValue("lot_a", TealType.uint64, protected=True),
-        GlobalStorageValue("lot_b", TealType.uint64, protected=True),
-        GlobalStorageValue("decimals", TealType.uint64, protected=True),
+        GlobalStorageValue("min_lot_a", TealType.uint64, protected=True),
+        GlobalStorageValue("min_lot_b", TealType.uint64, protected=True),
+        GlobalStorageValue("max_decimals", TealType.uint64, protected=True),
         # Updated as needed
         GlobalStorageValue("seq", TealType.uint64),
         GlobalStorageValue("bid", TealType.uint64),
@@ -51,6 +52,7 @@ vex = Application(
 # Routable methods
 @vex.router.method
 def bootstrap():
+    """ Bootstraps the global variables and boxes """
     return Seq(
         vex.initialize_globals(),
         bookkeeping.ask_pq.initialize(),
@@ -62,6 +64,10 @@ def bootstrap():
 def new_order(
     is_bid: abi.Bool, price: abi.Uint64, size: abi.Uint64, *, output: abi.Uint64
 ):
+    """
+        Accepts a new order and tries to fill it
+        if unfillable, place it in the queue 
+    """
     return Seq(
         (remaining_size := abi.Uint64()).set(size.get()),
         If(
