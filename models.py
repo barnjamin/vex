@@ -1,10 +1,13 @@
-from typing import Callable
+from typing import Callable, cast, List
 from pyteal import *
 
 
 class NamedTuple(abi.Tuple):
     def __init__(self):
-        self.type_specs = {k: v().type_spec() for k, v in self.__annotations__.items()}
+        self.type_specs = {
+            k: cast(abi.BaseType, v()).type_spec()
+            for k, v in self.__annotations__.items()
+        }
         self.field_names = list(self.type_specs.keys())
 
         for idx in range(len(self.field_names)):
@@ -12,6 +15,28 @@ class NamedTuple(abi.Tuple):
             setattr(self, name, self.getter(idx))
 
         super().__init__(abi.TupleTypeSpec(*self.type_specs.values()))
+
+    def put(self, *exprs: Expr)->Expr:
+
+        abi_types: List[abi.BaseType] = []
+        setters: List[Expr] = []
+
+        for idx, expr in enumerate(exprs):
+            tspec = self.type_specs[self.field_names[idx]]
+            #print(tspec.storage_type())
+            #print(expr.type_of())
+            #if expr.type_of() != tspec.storage_type():
+            #    raise TealTypeError(tspec.storage_type(), expr.type_of()) 
+
+            val: abi.BaseType = tspec.new_instance()
+            setters.append(val.set(expr))
+            abi_types.append(val)
+
+        return Seq(
+            *setters,
+            self.set(*abi_types)
+        )
+            
 
     def get_type(self):
         return self.type_spec().annotation_type()

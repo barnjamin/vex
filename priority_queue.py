@@ -1,4 +1,6 @@
 from pyteal import *
+from typing import List
+from application import GlobalStorageValue
 
 ou = OpUp(OpUpMode.OnCall)
 
@@ -11,13 +13,14 @@ class PriorityQueue:
         self.type_spec = type_spec
         self.lt = lt
         self.type_size = Int(abi.size_of(self.type_spec))
+        self.counter = GlobalStorageValue(self.box_name_str, TealType.uint64)
 
     def initialize(self) -> Expr:
         return BoxCreate(self.box_name, self.box_size)
 
     def count(self) -> Expr:
         """count returns the number of elements in the priority queue, tracked by global state var"""
-        return pq_count(self.box_name)
+        return self.counter.get()
 
     def insert(self, thing: abi.BaseType) -> Expr:
         """insert adds a new element in sorted order"""

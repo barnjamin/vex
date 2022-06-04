@@ -50,7 +50,6 @@ class ApplicationClient:
 
         return call
 
-
     def create(
         self, signer: AccountTransactionSigner, seed_amt: int = 0
     ) -> Tuple[int, str]:

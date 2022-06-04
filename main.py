@@ -1,23 +1,25 @@
 import base64
 import random
 from algosdk.v2client import algod
-from algosdk.future.transaction import BoxReference
+
+# from algosdk.future.transaction import BoxReference
 from algosdk.atomic_transaction_composer import AccountTransactionSigner
+from pyteal import OptimizeOptions
 
 from sandbox import get_sandbox_accounts
-from vex import vex, ask_pq, bid_pq
+from vex import vex
 from application_client import ApplicationClient
 
 host = "http://localhost:4001"
 token = "a" * 64
 
-client = ApplicationClient(algod.AlgodClient(token, host), vex)
+# client = ApplicationClient(algod.AlgodClient(token, host), vex)
 
 accts = get_sandbox_accounts()
 addr, sk = accts[-1]
 signer = AccountTransactionSigner(sk)
 
-boxes = [BoxReference(0, ask_pq.box_name_str), BoxReference(0, bid_pq.box_name_str)]
+# boxes = [BoxReference(0, ask_pq.box_name_str), BoxReference(0, bid_pq.box_name_str)]
 
 
 class Order:
@@ -58,17 +60,20 @@ if __name__ == "__main__":
 
     mid = 50
 
+    approval, clear, contract = vex.router.compile_program(
+        version=7, optimize=OptimizeOptions(scratch_slots=True)
+    )
     if True:
         with open("approval.teal", "w") as f:
-            f.write(client.approval)
-        
+            f.write(approval)
+
         with open("clear.teal", "w") as f:
-            f.write(client.clear)
+            f.write(clear)
 
         with open("abi.json", "w") as f:
             import json
-            f.write(json.dumps(client.contract.dictify()))
 
+            f.write(json.dumps(contract.dictify()))
 
 
 #    if True:
