@@ -1,6 +1,5 @@
 from pyteal import *
-from typing import List
-from application import GlobalStorageValue
+from beaker import ApplicationStateValue
 
 ou = OpUp(OpUpMode.OnCall)
 
@@ -12,8 +11,8 @@ class PriorityQueue:
         self.box_size = box_size
         self.type_spec = type_spec
         self.lt = lt
-        self.type_size = Int(abi.size_of(self.type_spec))
-        self.counter = GlobalStorageValue(self.box_name_str, TealType.uint64)
+        self.type_size = Int(self.type_spec.byte_length_static())
+        self.counter = ApplicationStateValue(TealType.uint64)
 
     def initialize(self) -> Expr:
         return BoxCreate(self.box_name, self.box_size)

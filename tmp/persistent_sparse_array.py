@@ -2,7 +2,7 @@ from typing import Literal
 from pyteal import *
 from models import NamedTuple
 
-kb = int(2 ** 10)
+kb = int(2**10)
 MAX_BOX_SIZE = 16 * kb
 BOX_MBR = 2500
 BOX_BYTES = 400

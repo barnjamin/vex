@@ -1,113 +1,215 @@
-from venv import create
 from pyteal import *
-from application import *
-from models import *
-import bookkeeping
+from priority_queue import PriorityQueue
+from beaker import *
 
-vex = Application(
-    [
-        # Static Config
-        GlobalStorageValue("asset_a", TealType.uint64, protected=True),
-        GlobalStorageValue("asset_b", TealType.uint64, protected=True),
-        GlobalStorageValue("min_lot_a", TealType.uint64, protected=True),
-        GlobalStorageValue("min_lot_b", TealType.uint64, protected=True),
-        GlobalStorageValue("max_decimals", TealType.uint64, protected=True),
-        # Updated as needed
-        GlobalStorageValue("seq", TealType.uint64),
-        GlobalStorageValue("bid", TealType.uint64),
-        GlobalStorageValue("ask", TealType.uint64),
-        GlobalStorageValue("mid", TealType.uint64),
-        # Box storage counters
-        bookkeeping.ask_pq.counter,
-        bookkeeping.bid_pq.counter,
-    ],
-    [
-        # Amount avail to withdraw
-        LocalStorageValue("avail_bal_a", TealType.uint64),
-        LocalStorageValue("avail_bal_b", TealType.uint64),
-        # Amount reserved on pending order
-        LocalStorageValue("reserved_bal_a", TealType.uint64),
-        LocalStorageValue("reserved_bal_b", TealType.uint64),
-        # Sequences of orders
-        LocalStorageValue("orders", TealType.bytes),
-    ],
-    Router(
-        "vex",
-        BareCallActions(
-            no_op=OnCompleteAction.create_only(Approve()),
-            update_application=OnCompleteAction.always(
-                Return(Txn.sender() == Global.creator_address())
-            ),
-            delete_application=OnCompleteAction.always(
-                Return(Txn.sender() == Global.creator_address())
-            ),
-            opt_in=OnCompleteAction.always(Approve()),
-            clear_state=OnCompleteAction.always(Approve()),
-            close_out=OnCompleteAction.always(Approve()),
-        ),
-    ),
-)
+MAX_BOX_SIZE = 1024 
+box_size = Int(MAX_BOX_SIZE)
+
+class VexAccount(abi.NamedTuple):
+    address: abi.Field[abi.Address]
+    balance_a: abi.Field[abi.Uint64]
+    balance_b: abi.Field[abi.Uint64]
+    reserved_a: abi.Field[abi.Uint64]
+    reserved_b: abi.Field[abi.Uint64]
+    credits: abi.Field[abi.Uint64]
 
 
-# Routable methods
-@vex.router.method
-def bootstrap():
-    """ Bootstraps the global variables and boxes """
-    return Seq(
-        vex.initialize_globals(),
-        bookkeeping.ask_pq.initialize(),
-        bookkeeping.bid_pq.initialize(),
-    )
+class RestingOrder(abi.NamedTuple):
+    price: abi.Field[abi.Uint64]
+    sequence: abi.Field[abi.Uint64]
+    size: abi.Field[abi.Uint64]
 
 
-@vex.router.method
-def new_order(
-    is_bid: abi.Bool, price: abi.Uint64, size: abi.Uint64, *, output: abi.Uint64
-):
-    """
+class IncomingOrderCancel(abi.NamedTuple):
+    price: abi.Field[abi.Uint64]
+    address: abi.Field[abi.Address]
+
+
+class IncomingOrderChangeSize(abi.NamedTuple):
+    price: abi.Field[abi.Uint64]
+    address: abi.Field[abi.Address]
+    current_size: abi.Field[abi.Uint64]
+    new_size: abi.Field[abi.Uint64]
+
+
+class Vex(Application):
+
+    asset_a = ApplicationStateValue(TealType.uint64, static=True)
+    asset_b = ApplicationStateValue(TealType.uint64, static=True)
+    min_lot_a = ApplicationStateValue(TealType.uint64, static=True)
+    min_lot_b = ApplicationStateValue(TealType.uint64, static=True)
+    max_decimals = ApplicationStateValue(TealType.uint64, static=True)
+    seq = ApplicationStateValue(TealType.uint64)
+    bid = ApplicationStateValue(TealType.uint64)
+    ask = ApplicationStateValue(TealType.uint64)
+    mid = ApplicationStateValue(TealType.uint64)
+
+    ask_pq = PriorityQueue("ask_book", box_size, Int(1), RestingOrder().type_spec())
+    bid_pq = PriorityQueue("bid_book", box_size, Int(0), RestingOrder().type_spec())
+
+    # TODO: no
+    ask_counter = ask_pq.counter
+    bid_counter = bid_pq.counter
+
+    # Amount avail to withdraw
+    avail_bal_a = AccountStateValue(TealType.uint64)
+    avail_bal_b = AccountStateValue(TealType.uint64)
+    # Amount reserved on pending order
+    reserved_bal_a = AccountStateValue(TealType.uint64)
+    reserved_bal_b = AccountStateValue(TealType.uint64)
+    # Sequences of orders
+    orders = AccountStateValue(TealType.bytes)
+
+    # Routable methods
+    @external
+    def boostrap(self):
+        """Bootstraps the global variables and boxes"""
+        return Seq(
+            self.initialize_application_state(),
+            Assert(self.ask_pq.initialize()),
+            Assert(self.bid_pq.initialize()),
+        )
+
+    @external
+    def new_order(
+        self,
+        is_bid: abi.Bool,
+        price: abi.Uint64,
+        size: abi.Uint64,
+        *,
+        output: abi.Uint64,
+    ):
+        """
         Accepts a new order and tries to fill it
-        if unfillable, place it in the queue 
-    """
-    return Seq(
-        (remaining_size := abi.Uint64()).set(size.get()),
-        If(
-            is_bid.get(),
-            Seq(
-                remaining_size.set(bookkeeping.try_fill_bids(price.get(), size.get())),
-                If(
-                    remaining_size.get() > Int(0),
-                    bookkeeping.add_ask(
-                        price,
-                        remaining_size,
-                        vex.globals["seq"].increment(),
+        if unfillable, place it in the queue
+        """
+        return Seq(
+            (remaining_size := abi.Uint64()).set(size.get()),
+            If(
+                is_bid.get(),
+                Seq(
+                    remaining_size.set(self.try_fill_bids(price.get(), size.get())),
+                    If(
+                        remaining_size.get() > Int(0),
+                        self.add_ask(
+                            price,
+                            remaining_size,
+                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get())
+                        ),
+                    ),
+                ),
+                Seq(
+                    remaining_size.set(self.try_fill_asks(price.get(), size.get())),
+                    If(
+                        remaining_size.get() > Int(0),
+                        self.add_bid(
+                            price,
+                            remaining_size,
+                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get())
+                        ),
                     ),
                 ),
             ),
-            Seq(
-                remaining_size.set(bookkeeping.try_fill_asks(price.get(), size.get())),
-                If(
-                    remaining_size.get() > Int(0),
-                    bookkeeping.add_bid(
-                        price,
-                        remaining_size,
-                        vex.globals["seq"].increment(),
-                    ),
+            output.set(size.get() - remaining_size.get()),
+        )
+
+    @external
+    def cancel_order(
+        self, price: abi.Uint64, seq: abi.Uint64, size: abi.Uint64, acct_id: abi.Uint64
+    ):
+        return Assert(Int(0))
+
+    @external
+    def modify_order(
+        self,
+        price: abi.Uint64,
+        seq: abi.Uint64,
+        size: abi.Uint64,
+        acct_id: abi.Uint64,
+        new_size: abi.Uint64,
+    ):
+        return Assert(Int(0))
+
+    @external
+    def register(self, acct: abi.Account, asset_a: abi.Asset, asset_b: abi.Asset):
+        return Assert(Int(0))
+
+    @internal(TealType.none)
+    def add_bid(self, price: abi.Uint64, size: abi.Uint64, seq: Expr):
+        return Seq(
+            (s := abi.Uint64()).set(seq),
+            (resting_order := RestingOrder()).set(price, s, size),
+            self.bid_pq.insert(resting_order),
+        )
+
+    @internal(TealType.none)
+    def add_ask(self, price: abi.Uint64, size: abi.Uint64, seq: Expr):
+        return Seq(
+            (s := abi.Uint64()).set(seq),
+            (resting_order := RestingOrder()).set(price, s, size),
+            self.ask_pq.insert(resting_order),
+        )
+
+    @internal(TealType.uint64)
+    def try_fill_bids(self, price: Expr, size: Expr):
+        return Seq(
+            # If theres nothing in the book or empty size, dip
+            If(Or(self.bid_pq.count() == Int(0), size == Int(0)), Return(size)),
+            # Peek the book and try to fill
+            (ro := RestingOrder()).decode(self.bid_pq.peek()),
+            (resting_price := abi.Uint64()).set(ro.price),
+            (resting_size := abi.Uint64()).set(ro.size),
+            # Next order not fillable
+            If(resting_price.get() < price, Return(size)),
+            If(
+                # Is it a full or partial of resting
+                resting_size.get() <= size,
+                Seq(
+                    # Full fill of resting
+                    self.bid_pq.remove(Int(0)),
+                    self.try_fill_bids(price, size - resting_size.get()),
+                ),
+                Seq(
+                    # Partial fill of resting
+                    (seq := abi.Uint64()).set(ro.sequence),
+                    (new_size := abi.Uint64()).set(resting_size.get() - size),
+                    ro.set(resting_price, seq, new_size),
+                    # Update resting with new size
+                    self.bid_pq.update(Int(0), ro),
+                    # Return 0 for size left fo fill
+                    Int(0),
                 ),
             ),
-        ),
-        output.set(size.get() - remaining_size.get()),
-    )
+        )
 
-
-# @vex.router.method
-# def cancel_order(price: abi.Uint64, seq: abi.Uint64, size: abi.Uint64, acct_id: abi.Uint64):
-#    pass
-#
-# @vex.router.method
-# def modify_order(price: abi.Uint64, seq: abi.Uint64, size: abi.Uint64, acct_id: abi.Uint64, new_size: abi.Uint64):
-#    pass
-
-# @vex.router.method
-# def register(acct: abi.Account, asset_a: abi.Asset, asset_b: abi.Asset):
-#    pass
-#
+    @internal(TealType.uint64)
+    def try_fill_asks(self, price: Expr, size: Expr):
+        return Seq(
+            # If theres nothing in the book or empty size, dip
+            If(Or(self.ask_pq.count() == Int(0), size == Int(0)), Return(size)),
+            # Peek the book and try to fill
+            (ro := RestingOrder()).decode(self.ask_pq.peek()),
+            (resting_price := abi.Uint64()).set(ro.price),
+            (resting_size := abi.Uint64()).set(ro.size),
+            # Next order not fillable
+            If(resting_price.get() > price, Return(size)),
+            If(
+                # Is it a full or partial of resting
+                resting_size.get() <= size,
+                Seq(
+                    # Full fill of resting
+                    self.ask_pq.remove(Int(0)),
+                    self.try_fill_asks(price, size - resting_size.get()),
+                ),
+                Seq(
+                    # Partial fill of resting
+                    (seq := abi.Uint64()).set(ro.sequence),
+                    (new_size := abi.Uint64()).set(resting_size.get() - size),
+                    ro.set(resting_price, seq, new_size),
+                    # Update resting with new size
+                    self.ask_pq.update(Int(0), ro),
+                    # Return 0 for size left fo fill
+                    Int(0),
+                ),
+            ),
+        )
