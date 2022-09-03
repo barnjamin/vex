@@ -2,10 +2,12 @@ from pyteal import *
 from priority_queue import PriorityQueue
 from beaker import *
 
-MAX_BOX_SIZE = 1024 
+MAX_BOX_SIZE = 1024
 box_size = Int(MAX_BOX_SIZE)
 
+
 class VexAccount(abi.NamedTuple):
+    """Represents an account that has registered with the VEX"""
     address: abi.Field[abi.Address]
     balance_a: abi.Field[abi.Uint64]
     balance_b: abi.Field[abi.Uint64]
@@ -15,6 +17,7 @@ class VexAccount(abi.NamedTuple):
 
 
 class RestingOrder(abi.NamedTuple):
+    """Represents a resting limit order"""
     price: abi.Field[abi.Uint64]
     sequence: abi.Field[abi.Uint64]
     size: abi.Field[abi.Uint64]
@@ -94,7 +97,7 @@ class Vex(Application):
                         self.add_ask(
                             price,
                             remaining_size,
-                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get())
+                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
                         ),
                     ),
                 ),
@@ -105,7 +108,7 @@ class Vex(Application):
                         self.add_bid(
                             price,
                             remaining_size,
-                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get())
+                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
                         ),
                     ),
                 ),

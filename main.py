@@ -5,7 +5,6 @@ from beaker import sandbox, client
 from vex import Vex
 
 
-
 class Order:
     def __init__(self, price, seq, size):
         self.price = price
@@ -66,34 +65,36 @@ if __name__ == "__main__":
             start, stop = 0, mid + 10
 
         price, size = random.randint(start, stop), random.randint(1, 10) * 10
-        filled = app_client.call(Vex.new_order, is_bid=bid, price=price, size=size, boxes=boxes)
-        print("{} Filled {}".format(side, filled))
+        result = app_client.call(
+            Vex.new_order, is_bid=bid, price=price, size=size, boxes=boxes
+        )
+        print("{} Filled {}".format(side, result.return_value))
 
     ## Start to build off chain representation
-    order_size = 24
+    # order_size = 24
 
-    bbs = OrderBookSide("bid")
-    bb = app_client.client.application_box_by_name(app_id, "bid_book")
-    box_bytes = base64.b64decode(bb["value"])
-    for bidx in range(orders):
-        o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
-        if o.size == 0:
-            break
+    # bbs = OrderBookSide("bid")
+    # bb = app_client.client.application_box_by_name(app_id, "bid_book")
+    # box_bytes = base64.b64decode(bb["value"])
+    # for bidx in range(orders):
+    #    o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
+    #    if o.size == 0:
+    #        break
 
-        bbs.add_order(o)
+    #    bbs.add_order(o)
 
-    abs = OrderBookSide("ask")
-    bb = app_client.client.application_box_by_name(app_id, "ask_book")
-    box_bytes = base64.b64decode(bb["value"])
-    for bidx in range(orders):
-        o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
-        if o.size == 0:
-            break
+    # abs = OrderBookSide("ask")
+    # bb = app_client.client.application_box_by_name(app_id, "ask_book")
+    # box_bytes = base64.b64decode(bb["value"])
+    # for bidx in range(orders):
+    #    o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
+    #    if o.size == 0:
+    #        break
 
-        abs.add_order(o)
+    #    abs.add_order(o)
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
-    plt.bar(*bbs.dom())
-    plt.bar(*abs.dom())
-    plt.savefig("dom.png")
+    # plt.bar(*bbs.dom())
+    # plt.bar(*abs.dom())
+    # plt.savefig("dom.png")
