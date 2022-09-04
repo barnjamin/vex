@@ -19,7 +19,7 @@ class PriorityQueue:
 
     def count(self) -> Expr:
         """count returns the number of elements in the priority queue, tracked by global state var"""
-        return pq_count(self.counter.key) 
+        return pq_count(self.counter.key)
 
     def insert(self, thing: abi.BaseType) -> Expr:
         """insert adds a new element in sorted order"""

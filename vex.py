@@ -85,33 +85,30 @@ class Vex(Application):
         if unfillable, place it in the queue
         """
         return Seq(
-            (remaining_size := abi.Uint64()).set(size.get()),
-            If(
-                is_bid.get(),
-                Seq(
-                    remaining_size.set(self.try_fill_bids(price.get(), size.get())),
-                    If(
-                        remaining_size.get() > Int(0),
-                        self.add_ask(
-                            price,
-                            remaining_size,
-                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
-                        ),
-                    ),
+            # Copy it now so we can report size filled to caller
+            output.set(size),
+            If(is_bid.get())
+            .Then(
+                size.set(self.fill_bids(price.get(), size.get())),
+                If(size.get()).Then(
+                    self.add_ask(
+                        price,
+                        size,
+                        Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
+                    )
                 ),
-                Seq(
-                    remaining_size.set(self.try_fill_asks(price.get(), size.get())),
-                    If(
-                        remaining_size.get() > Int(0),
-                        self.add_bid(
-                            price,
-                            remaining_size,
-                            Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
-                        ),
+            )
+            .Else(
+                size.set(self.fill_asks(price.get(), size.get())),
+                If(size.get()).Then(
+                    self.add_bid(
+                        price,
+                        size,
+                        Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
                     ),
                 ),
             ),
-            output.set(size.get() - remaining_size.get()),
+            output.set(output.get() - size.get()),
         )
 
     @external
@@ -152,7 +149,7 @@ class Vex(Application):
         )
 
     @internal(TealType.uint64)
-    def try_fill_bids(self, price: Expr, size: Expr):
+    def fill_bids(self, price: Expr, size: Expr):
         return Seq(
             # If theres nothing in the book or empty size, dip
             If(Or(self.bid_pq.count() == Int(0), size == Int(0)), Return(size)),
@@ -168,7 +165,8 @@ class Vex(Application):
                 Seq(
                     # Full fill of resting
                     self.bid_pq.remove(Int(0)),
-                    self.try_fill_bids(price, size - resting_size.get()),
+                    # Check the next one after subtracting filled portion
+                    self.fill_bids(price, size - resting_size.get()),
                 ),
                 Seq(
                     # Partial fill of resting
@@ -184,7 +182,7 @@ class Vex(Application):
         )
 
     @internal(TealType.uint64)
-    def try_fill_asks(self, price: Expr, size: Expr):
+    def fill_asks(self, price: Expr, size: Expr):
         return Seq(
             # If theres nothing in the book or empty size, dip
             If(Or(self.ask_pq.count() == Int(0), size == Int(0)), Return(size)),
@@ -200,7 +198,8 @@ class Vex(Application):
                 Seq(
                     # Full fill of resting
                     self.ask_pq.remove(Int(0)),
-                    self.try_fill_asks(price, size - resting_size.get()),
+                    # Check the next one after subtracting filled portion
+                    self.fill_asks(price, size - resting_size.get()),
                 ),
                 Seq(
                     # Partial fill of resting

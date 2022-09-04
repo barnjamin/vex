@@ -38,7 +38,6 @@ class OrderBookSide:
 
 if __name__ == "__main__":
 
-
     # TODO: can the App tell us which boxes it wants?
     boxes = [(0, Vex.ask_pq.box_name_str), (0, Vex.bid_pq.box_name_str)]
 
@@ -67,7 +66,9 @@ if __name__ == "__main__":
         result = app_client.call(
             Vex.new_order, is_bid=bid, price=price, size=size, boxes=boxes
         )
-        print([base64.b64decode(l).decode('utf-8') for l in result.tx_info['logs'][:-1]])
+        print(
+            [base64.b64decode(l).decode("utf-8") for l in result.tx_info["logs"][:-1]]
+        )
         print("{} Filled {}".format(side, result.return_value))
 
     # Start to build off chain representation
@@ -77,21 +78,21 @@ if __name__ == "__main__":
     bb = app_client.client.application_box_by_name(app_id, b"bid_book")
     box_bytes = base64.b64decode(bb["value"])
     for bidx in range(orders):
-       o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
-       if o.size == 0:
-           break
+        o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
+        if o.size == 0:
+            break
 
-       bbs.add_order(o)
+        bbs.add_order(o)
 
     abs = OrderBookSide("ask")
     bb = app_client.client.application_box_by_name(app_id, b"ask_book")
     box_bytes = base64.b64decode(bb["value"])
     for bidx in range(orders):
-       o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
-       if o.size == 0:
-           break
+        o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
+        if o.size == 0:
+            break
 
-       abs.add_order(o)
+        abs.add_order(o)
 
     import matplotlib.pyplot as plt
 
