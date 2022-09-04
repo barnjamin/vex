@@ -47,6 +47,7 @@ if __name__ == "__main__":
     app_client = client.ApplicationClient(algod_client, Vex(), signer=signer)
 
     import json
+
     with open("vex.json", "w") as f:
         f.write(json.dumps(Vex().application_spec()))
 

@@ -5,6 +5,8 @@ ou = OpUp(OpUpMode.OnCall)
 
 SortOrderLT = Int(1)
 SortOrderGT = Int(0)
+
+
 class PriorityQueue:
     def __init__(self, box_name: str, box_size: Int, lt: Int, type: type[abi.BaseType]):
         self._box_name = box_name
@@ -15,7 +17,7 @@ class PriorityQueue:
         # Use lt or gt check for sorting
         self.lt = lt
 
-        self.type_spec = abi.type_spec_from_annotation(type) 
+        self.type_spec = abi.type_spec_from_annotation(type)
         self.type_size = Int(self.type_spec.byte_length_static())
 
         self.counter = ApplicationStateValue(TealType.uint64, key=self.box_name)

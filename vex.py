@@ -4,6 +4,7 @@ from beaker import *
 
 MAX_BOX_SIZE = 1024
 
+
 class VexAccount(abi.NamedTuple):
     """Represents an account that has registered with the VEX"""
 
