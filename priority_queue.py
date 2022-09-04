@@ -12,14 +12,14 @@ class PriorityQueue:
         self.type_spec = type_spec
         self.lt = lt
         self.type_size = Int(self.type_spec.byte_length_static())
-        self.counter = ApplicationStateValue(TealType.uint64)
+        self.counter = ApplicationStateValue(TealType.uint64, key=self.box_name)
 
     def initialize(self) -> Expr:
         return BoxCreate(self.box_name, self.box_size)
 
     def count(self) -> Expr:
         """count returns the number of elements in the priority queue, tracked by global state var"""
-        return self.counter.get()
+        return pq_count(self.counter.key) 
 
     def insert(self, thing: abi.BaseType) -> Expr:
         """insert adds a new element in sorted order"""

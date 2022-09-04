@@ -8,6 +8,7 @@ box_size = Int(MAX_BOX_SIZE)
 
 class VexAccount(abi.NamedTuple):
     """Represents an account that has registered with the VEX"""
+
     address: abi.Field[abi.Address]
     balance_a: abi.Field[abi.Uint64]
     balance_b: abi.Field[abi.Uint64]
@@ -18,6 +19,7 @@ class VexAccount(abi.NamedTuple):
 
 class RestingOrder(abi.NamedTuple):
     """Represents a resting limit order"""
+
     price: abi.Field[abi.Uint64]
     sequence: abi.Field[abi.Uint64]
     size: abi.Field[abi.Uint64]
@@ -67,11 +69,7 @@ class Vex(Application):
     @external
     def boostrap(self):
         """Bootstraps the global variables and boxes"""
-        return Seq(
-            self.initialize_application_state(),
-            Assert(self.ask_pq.initialize()),
-            Assert(self.bid_pq.initialize()),
-        )
+        return Assert(self.ask_pq.initialize(), self.bid_pq.initialize())
 
     @external
     def new_order(
