@@ -1,0 +1,22 @@
+{
+  "name": "vex",
+  "version": "1.0.0",
+  "description": "VEX - Value Exchange ---",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/barnjamin/vex.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/barnjamin/vex/issues"
+  },
+  "homepage": "https://github.com/barnjamin/vex#readme",
+  "dependencies": {
+    "beaker-ts": "^0.0.20"
+  }
+}

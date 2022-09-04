@@ -1,10 +1,8 @@
 from pyteal import *
-from priority_queue import PriorityQueue
+from priority_queue import PriorityQueue, SortOrderGT, SortOrderLT
 from beaker import *
 
 MAX_BOX_SIZE = 1024
-box_size = Int(MAX_BOX_SIZE)
-
 
 class VexAccount(abi.NamedTuple):
     """Represents an account that has registered with the VEX"""
@@ -49,12 +47,14 @@ class Vex(Application):
     ask = ApplicationStateValue(TealType.uint64)
     mid = ApplicationStateValue(TealType.uint64)
 
-    ask_pq = PriorityQueue("ask_book", box_size, Int(1), RestingOrder().type_spec())
-    bid_pq = PriorityQueue("bid_book", box_size, Int(0), RestingOrder().type_spec())
+    box_size = Int(MAX_BOX_SIZE)
+
+    ask_queue = PriorityQueue("ask_book", box_size, SortOrderLT, RestingOrder)
+    bid_queue = PriorityQueue("bid_book", box_size, SortOrderGT, RestingOrder)
 
     # TODO: no
-    ask_counter = ask_pq.counter
-    bid_counter = bid_pq.counter
+    ask_counter = ask_queue.counter
+    bid_counter = bid_queue.counter
 
     # Amount avail to withdraw
     avail_bal_a = AccountStateValue(TealType.uint64)
@@ -69,7 +69,7 @@ class Vex(Application):
     @external
     def boostrap(self):
         """Bootstraps the global variables and boxes"""
-        return Assert(self.ask_pq.initialize(), self.bid_pq.initialize())
+        return Assert(self.ask_queue.initialize(), self.bid_queue.initialize())
 
     @external
     def new_order(
@@ -89,23 +89,27 @@ class Vex(Application):
             output.set(size),
             If(is_bid.get())
             .Then(
-                size.set(self.fill_bids(price.get(), size.get())),
-                If(size.get()).Then(
-                    self.add_ask(
-                        price,
-                        size,
-                        Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
-                    )
-                ),
-            )
-            .Else(
+                # Check to see if we can fill any asks
                 size.set(self.fill_asks(price.get(), size.get())),
+                # Still have size, put in the queue
                 If(size.get()).Then(
                     self.add_bid(
                         price,
                         size,
-                        Seq(self.seq.set(self.seq + Int(1)), self.seq.get()),
+                        Seq(self.seq.increment(), self.seq.get()),
                     ),
+                ),
+            )
+            .Else(
+                # Check to see if we can fill any bids
+                size.set(self.fill_bids(price.get(), size.get())),
+                If(size.get()).Then(
+                    # Still have size, put it in the queue
+                    self.add_ask(
+                        price,
+                        size,
+                        Seq(self.seq.increment(), self.seq),
+                    )
                 ),
             ),
             output.set(output.get() - size.get()),
@@ -130,6 +134,7 @@ class Vex(Application):
 
     @external
     def register(self, acct: abi.Account, asset_a: abi.Asset, asset_b: abi.Asset):
+        # Add a new member to the member list, assigning them a sequence id that we can access
         return Assert(Int(0))
 
     @internal(TealType.none)
@@ -137,7 +142,7 @@ class Vex(Application):
         return Seq(
             (s := abi.Uint64()).set(seq),
             (resting_order := RestingOrder()).set(price, s, size),
-            self.bid_pq.insert(resting_order),
+            self.bid_queue.insert(resting_order),
         )
 
     @internal(TealType.none)
@@ -145,16 +150,16 @@ class Vex(Application):
         return Seq(
             (s := abi.Uint64()).set(seq),
             (resting_order := RestingOrder()).set(price, s, size),
-            self.ask_pq.insert(resting_order),
+            self.ask_queue.insert(resting_order),
         )
 
     @internal(TealType.uint64)
     def fill_bids(self, price: Expr, size: Expr):
         return Seq(
             # If theres nothing in the book or empty size, dip
-            If(Or(self.bid_pq.count() == Int(0), size == Int(0)), Return(size)),
+            If(Or(self.bid_queue.count() == Int(0), size == Int(0)), Return(size)),
             # Peek the book and try to fill
-            (ro := RestingOrder()).decode(self.bid_pq.peek()),
+            (ro := RestingOrder()).decode(self.bid_queue.peek()),
             (resting_price := abi.Uint64()).set(ro.price),
             (resting_size := abi.Uint64()).set(ro.size),
             # Next order not fillable
@@ -164,7 +169,7 @@ class Vex(Application):
                 resting_size.get() <= size,
                 Seq(
                     # Full fill of resting
-                    self.bid_pq.remove(Int(0)),
+                    self.bid_queue.remove(Int(0)),
                     # Check the next one after subtracting filled portion
                     self.fill_bids(price, size - resting_size.get()),
                 ),
@@ -174,7 +179,7 @@ class Vex(Application):
                     (new_size := abi.Uint64()).set(resting_size.get() - size),
                     ro.set(resting_price, seq, new_size),
                     # Update resting with new size
-                    self.bid_pq.update(Int(0), ro),
+                    self.bid_queue.update(Int(0), ro),
                     # Return 0 for size left fo fill
                     Int(0),
                 ),
@@ -185,9 +190,9 @@ class Vex(Application):
     def fill_asks(self, price: Expr, size: Expr):
         return Seq(
             # If theres nothing in the book or empty size, dip
-            If(Or(self.ask_pq.count() == Int(0), size == Int(0)), Return(size)),
+            If(Or(self.ask_queue.count() == Int(0), size == Int(0)), Return(size)),
             # Peek the book and try to fill
-            (ro := RestingOrder()).decode(self.ask_pq.peek()),
+            (ro := RestingOrder()).decode(self.ask_queue.peek()),
             (resting_price := abi.Uint64()).set(ro.price),
             (resting_size := abi.Uint64()).set(ro.size),
             # Next order not fillable
@@ -197,7 +202,7 @@ class Vex(Application):
                 resting_size.get() <= size,
                 Seq(
                     # Full fill of resting
-                    self.ask_pq.remove(Int(0)),
+                    self.ask_queue.remove(Int(0)),
                     # Check the next one after subtracting filled portion
                     self.fill_asks(price, size - resting_size.get()),
                 ),
@@ -207,7 +212,7 @@ class Vex(Application):
                     (new_size := abi.Uint64()).set(resting_size.get() - size),
                     ro.set(resting_price, seq, new_size),
                     # Update resting with new size
-                    self.ask_pq.update(Int(0), ro),
+                    self.ask_queue.update(Int(0), ro),
                     # Return 0 for size left fo fill
                     Int(0),
                 ),

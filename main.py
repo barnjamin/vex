@@ -39,12 +39,16 @@ class OrderBookSide:
 if __name__ == "__main__":
 
     # TODO: can the App tell us which boxes it wants?
-    boxes = [(0, Vex.ask_pq.box_name_str), (0, Vex.bid_pq.box_name_str)]
+    boxes = [(0, Vex.ask_queue._box_name), (0, Vex.bid_queue._box_name)]
 
     algod_client = sandbox.clients.get_algod_client()
     signer = sandbox.kmd.get_accounts().pop().signer
 
     app_client = client.ApplicationClient(algod_client, Vex(), signer=signer)
+
+    import json
+    with open("vex.json", "w") as f:
+        f.write(json.dumps(Vex().application_spec()))
 
     app_id, app_addr, txid = app_client.create()
 
@@ -59,7 +63,7 @@ if __name__ == "__main__":
         side = "bid" if bid else "ask"
 
         start, stop = mid - 3, mid + 5
-        if not bid:
+        if bid:
             start, stop = mid - 5, mid + 3
 
         price, size = random.randint(start, stop), random.randint(1, 10) * 10
