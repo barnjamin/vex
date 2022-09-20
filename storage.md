@@ -7,6 +7,11 @@ Each list contains all orders at a given price.
 
 Lists are stored immediately adjacent in 4k boxes. The boxes _may_ have slack space at the end.
 
+!! Note: 
+
+    We're essentially trying to manage pages of memory, termed boxes and efficiently allocate new boxes/coalesce adjacent boxes 
+
+
 ## Layout
 
 ```
