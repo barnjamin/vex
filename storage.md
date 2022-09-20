@@ -7,6 +7,7 @@ Each list contains all orders at a given price.
 
 Lists are stored immediately adjacent in 4k boxes. The boxes _may_ have slack space at the end.
 
+## Layout
 
 ```
        MidPrice is 10.00
@@ -45,6 +46,8 @@ Lists are stored immediately adjacent in 4k boxes. The boxes _may_ have slack sp
       └─────────────────────────────────────────────────────────────┘
 ```
 
+## fill order
+
 As orders are filled, we remove them from the boxes holding them and slide the remaining orders in the box to the left.  Empty boxes are deleted.
 
 ```
@@ -65,7 +68,7 @@ As orders are filled, we remove them from the boxes holding them and slide the r
 │                │        │        │                 │            │
 │ xxxxxxxxxxx    │        │        │                 │            │
 │                │        │        │                 │            │
-│ Filled     ◄───┤        │        │                 │  xxxxxxx   │
+│ Filled         │        │        │                 │  xxxxxxx   │
 │                │        │        │                 │            │
 │ xxxxxxxxxxx    │        │        │                 │            │
 │                │        │        │                 │            │
@@ -87,11 +90,11 @@ As orders are filled, we remove them from the boxes holding them and slide the r
 
 
 
-
+## new order
 
 As new orders come in, we slide the orders at price increments after the orders price to the right. 
 
-    If the slide would result in breaching the box boundary, we first check the next box (if we have access) to see if we can move the entire list into it, otherwise we create a new box containing it. NOTE this requires the new boxes name be passed as a reference
+If the slide would result in breaching the box boundary, we first check the next box (if we have access) to see if we can move the entire list into it, otherwise we create a new box containing it. NOTE this requires the new boxes name be passed as a reference
 
 
 
@@ -157,5 +160,7 @@ Becomes
 
 
 ```
+
+# cancel order
 
 As orders are cancelled, we remove it from the box holding it and slide remaining orders in the box to the left. Empty boxes are deleted.
