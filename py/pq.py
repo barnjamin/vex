@@ -16,7 +16,7 @@ class Order:
         return f"{self.price:03}.{self.priority:03}"
 
     def __str__(self) -> str:
-        return f"{self.size}@{self.key()}"
+        return f"{self.size}@{self.price}"
 
 
 def parent_idx(i: int) -> int:
@@ -111,6 +111,7 @@ min_price, max_price = 5, 100
 for x in range(book_size):
     o = Order(random.randint(min_price, max_price), random.randint(10, 100), x)
     pq.insert(o)
+
 
 # Fill order
 order = Order(12, 500, 0)

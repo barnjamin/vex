@@ -1,6 +1,6 @@
 import random
 import base64
-
+import algosdk
 from beaker import sandbox, client
 from vex import Vex
 
@@ -36,28 +36,31 @@ class OrderBookSide:
         return ([i[0] for i in items], [i[1] for i in items])
 
 
-if __name__ == "__main__":
-
+def demo():
     # TODO: can the App tell us which boxes it wants?
-    boxes = [(0, Vex.ask_queue._box_name), (0, Vex.bid_queue._box_name)]
+    boxes = [
+        (0, Vex.ask_queue._box_name),
+        (0, Vex.bid_queue._box_name),
+        (0, ""),
+        (0, ""),
+        (0, ""),
+        (0, ""),
+        (0, ""),
+        (0, ""),
+    ]
 
+    # Setup
     algod_client = sandbox.clients.get_algod_client()
     signer = sandbox.kmd.get_accounts().pop().signer
 
     app_client = client.ApplicationClient(algod_client, Vex(), signer=signer)
 
-    import json
-
-    with open("vex.json", "w") as f:
-        f.write(json.dumps(Vex().application_spec()))
-
-    app_id, app_addr, txid = app_client.create()
-
+    app_id, _, _ = app_client.create()
     app_client.fund(int(1e7))
-
     app_client.call(Vex.boostrap, boxes=boxes)
 
-    orders = 50
+    # Simulate incoming orders
+    orders = 200
     mid = 50
     for x in range(orders):
         bid = x % 2 == 0
@@ -71,18 +74,21 @@ if __name__ == "__main__":
         result = app_client.call(
             Vex.new_order, is_bid=bid, price=price, size=size, boxes=boxes
         )
-        print(
-            [base64.b64decode(l).decode("utf-8") for l in result.tx_info["logs"][:-1]]
-        )
         print("{} Filled {}".format(side, result.return_value))
+
+    # plot the depth of market
+    chart_dom(app_id, app_client.client)
+
+
+def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
+    import matplotlib.pyplot as plt
 
     # Start to build off chain representation
     order_size = 24
-
     bbs = OrderBookSide("bid")
-    bb = app_client.client.application_box_by_name(app_id, b"bid_book")
+    bb = algod_client.application_box_by_name(app_id, b"bid_book")
     box_bytes = base64.b64decode(bb["value"])
-    for bidx in range(orders):
+    for bidx in range(len(box_bytes) // order_size):
         o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
         if o.size == 0:
             break
@@ -90,17 +96,20 @@ if __name__ == "__main__":
         bbs.add_order(o)
 
     abs = OrderBookSide("ask")
-    bb = app_client.client.application_box_by_name(app_id, b"ask_book")
+    bb = algod_client.application_box_by_name(app_id, b"ask_book")
     box_bytes = base64.b64decode(bb["value"])
-    for bidx in range(orders):
+    for bidx in range(len(box_bytes) // order_size):
         o = Order.from_bytes(box_bytes[bidx * order_size : (bidx + 1) * order_size])
         if o.size == 0:
             break
 
         abs.add_order(o)
 
-    import matplotlib.pyplot as plt
-
     plt.bar(*bbs.dom())
     plt.bar(*abs.dom())
     plt.savefig("dom.png")
+
+
+if __name__ == "__main__":
+    # Vex().dump("./artifacts")
+    demo()

@@ -2,7 +2,7 @@ from pyteal import *
 from priority_queue import PriorityQueue, SortOrderGT, SortOrderLT
 from beaker import *
 
-MAX_BOX_SIZE = 1024
+MAX_BOX_SIZE = 1024 * 4
 
 
 class VexAccount(abi.NamedTuple):
@@ -19,6 +19,7 @@ class VexAccount(abi.NamedTuple):
 class RestingOrder(abi.NamedTuple):
     """Represents a resting limit order"""
 
+    # DO NOT CHANGE THE ORDER
     price: abi.Field[abi.Uint64]
     sequence: abi.Field[abi.Uint64]
     size: abi.Field[abi.Uint64]
