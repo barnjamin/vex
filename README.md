@@ -1,6 +1,8 @@
 VEX - Value Exchange
 ---
 
+# Description
+
 On chain order book with using price/time order matching
 
 Each pair of assets (A/B) has an associated Order Book containing resting Limit Orders for each side (Bid/Ask). 
@@ -21,7 +23,7 @@ This design should:
 - Allow Order Cancelling/Modification (User holds ref to order and submits cancel for it)
 
 
-TODO:
+# TODO:
 
 [x] Priority Queue to hold orders
 

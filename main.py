@@ -4,38 +4,6 @@ import algosdk
 from beaker import sandbox, client
 from vex import Vex
 
-
-class Order:
-    def __init__(self, price, seq, size):
-        self.price = price
-        self.size = size
-        self.seq = seq
-
-    @staticmethod
-    def from_bytes(b):
-        price = int.from_bytes(b[:8], "big")
-        seq = int.from_bytes(b[8:16], "big")
-        size = int.from_bytes(b[16:], "big")
-        return Order(price, seq, size)
-
-
-class OrderBookSide:
-    def __init__(self, side):
-        self.side = side
-        self.orders = []
-        self.volume = {}
-
-    def add_order(self, order: Order):
-        if order.price not in self.volume:
-            self.volume[order.price] = 0
-        self.volume[order.price] += order.size
-        self.orders.append(order)
-
-    def dom(self):
-        items = sorted(self.volume.items())
-        return ([i[0] for i in items], [i[1] for i in items])
-
-
 def demo():
     # TODO: can the App tell us which boxes it wants?
     boxes = [
@@ -83,6 +51,37 @@ def demo():
 def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
     import matplotlib.pyplot as plt
 
+    class Order:
+        def __init__(self, price, seq, size):
+            self.price = price
+            self.size = size
+            self.seq = seq
+
+        @staticmethod
+        def from_bytes(b):
+            price = int.from_bytes(b[:8], "big")
+            seq = int.from_bytes(b[8:16], "big")
+            size = int.from_bytes(b[16:], "big")
+            return Order(price, seq, size)
+
+
+    class OrderBookSide:
+        def __init__(self, side):
+            self.side = side
+            self.orders = []
+            self.volume = {}
+
+        def add_order(self, order: Order):
+            if order.price not in self.volume:
+                self.volume[order.price] = 0
+            self.volume[order.price] += order.size
+            self.orders.append(order)
+
+        def dom(self):
+            items = sorted(self.volume.items())
+            return ([i[0] for i in items], [i[1] for i in items])
+
+
     # Start to build off chain representation
     order_size = 24
     bbs = OrderBookSide("bid")
@@ -111,5 +110,4 @@ def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
 
 
 if __name__ == "__main__":
-    # Vex().dump("./artifacts")
     demo()

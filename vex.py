@@ -220,3 +220,7 @@ class Vex(Application):
                 ),
             ),
         )
+
+
+if __name__ == "__main__":
+    Vex().dump("./artifacts")
