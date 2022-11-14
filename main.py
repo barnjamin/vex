@@ -2,7 +2,9 @@ import random
 import base64
 import algosdk
 from beaker import sandbox, client
+from beaker.client.api_providers import AlgoNode, Network
 from vex import Vex
+
 
 def demo():
     # TODO: can the App tell us which boxes it wants?
@@ -18,12 +20,15 @@ def demo():
     ]
 
     # Setup
-    algod_client = sandbox.clients.get_algod_client()
+    # algod_client = sandbox.clients.get_algod_client()
+    algod_client = AlgoNode(network=Network.BetaNet).algod()
+
     signer = sandbox.kmd.get_accounts().pop().signer
 
     app_client = client.ApplicationClient(algod_client, Vex(), signer=signer)
 
     app_id, _, _ = app_client.create()
+    print(f"CREATED APP ID: {app_id}")
     app_client.fund(int(1e7))
     app_client.call(Vex.boostrap, boxes=boxes)
 
@@ -44,8 +49,7 @@ def demo():
         )
         print("{} Filled {}".format(side, result.return_value))
 
-    # plot the depth of market
-    chart_dom(app_id, app_client.client)
+    return app_id
 
 
 def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
@@ -64,7 +68,6 @@ def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
             size = int.from_bytes(b[16:], "big")
             return Order(price, seq, size)
 
-
     class OrderBookSide:
         def __init__(self, side):
             self.side = side
@@ -80,7 +83,6 @@ def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
         def dom(self):
             items = sorted(self.volume.items())
             return ([i[0] for i in items], [i[1] for i in items])
-
 
     # Start to build off chain representation
     order_size = 24
@@ -110,4 +112,5 @@ def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
 
 
 if __name__ == "__main__":
-    demo()
+    app_id = demo()
+    chart_dom(app_id, AlgoNode(Network.BetaNet).algod())
