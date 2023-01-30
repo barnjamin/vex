@@ -1,0 +1,19 @@
+hide-banner: true
+
+log-level: "INFO"
+log-file: "/tmp/conduit.log"
+
+importer:
+    name: algod
+    config:
+        netaddr: "http://localhost:4001"
+        token: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+processors:
+  - name: block_evaluator
+    config:
+        algod-addr: "http://localhost:4001"
+        algod-token: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+exporter:
+    name: box_exporter 

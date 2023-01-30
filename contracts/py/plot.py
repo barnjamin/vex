@@ -1,6 +1,6 @@
 import algosdk
 import base64
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # type: ignore
 
 def chart_dom(app_id: int, algod_client: algosdk.v2client.algod.AlgodClient):
 

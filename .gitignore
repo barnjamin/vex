@@ -2,3 +2,9 @@
 __pycache__/
 .vscode/
 node_modules/
+
+watcher/metadata.json
+watcher/processor*
+watcher/importer*
+watcher/exporter*
+

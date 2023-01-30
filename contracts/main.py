@@ -1,6 +1,6 @@
 import random
 from beaker import sandbox, client
-from beaker.client.api_providers import AlgoNode, Network
+from beaker.client.api_providers import Sandbox , Network
 from vex import Vex
 
 
@@ -18,15 +18,16 @@ def demo():
     ]
 
     # Setup
-    # algod_client = sandbox.clients.get_algod_client()
-    algod_client = AlgoNode(network=Network.BetaNet).algod()
+    algod_client = Sandbox(network=Network.SandNet).algod()
 
-    signer = sandbox.kmd.get_accounts().pop().signer
+    acct = sandbox.kmd.get_accounts().pop()
 
-    app_client = client.ApplicationClient(algod_client, Vex(), signer=signer)
+    app_client = client.ApplicationClient(algod_client, Vex(), signer=acct.signer)
 
     app_id, _, _ = app_client.create()
+
     print(f"CREATED APP ID: {app_id}")
+
     app_client.fund(int(1e7))
     app_client.call(Vex.boostrap, boxes=boxes)
 
