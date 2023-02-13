@@ -3,8 +3,8 @@ __pycache__/
 .vscode/
 node_modules/
 
-watcher/metadata.json
-watcher/processor*
-watcher/importer*
-watcher/exporter*
+importer/metadata.json
+importer/processor*
+importer/importer*
+importer/exporter*
 
