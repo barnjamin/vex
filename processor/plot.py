@@ -1,8 +1,8 @@
 import algosdk
 import base64
 import matplotlib.pyplot as plt  # type: ignore
-import numpy as np
 from matplotlib.animation import FuncAnimation  # type: ignore
+import numpy as np  # type: ignore
 
 from model import OrderBookSide
 

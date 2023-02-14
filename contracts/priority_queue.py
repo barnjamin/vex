@@ -52,7 +52,9 @@ class PriorityQueue:
         return BoxCreate(self.box_name, self.box_size)
 
     def count(self) -> Expr:
-        """count returns the number of elements in the priority queue, tracked by global state var"""
+        """count returns the number of elements in the priority queue,
+        tracked by global state var
+        """
         return pq_count(self.counter.key)
 
     def insert(self, thing: abi.BaseType) -> Expr:
@@ -64,11 +66,15 @@ class PriorityQueue:
         return pq_write(self.box_name, idx, thing.encode())
 
     def delete(self, thing: abi.BaseType) -> Expr:
-        """delete removes a given element by finding it in the pq then removing it by index"""
+        """delete removes a given element by finding it in the
+        pq then removing it by index
+        """
         return self.remove(self.search(thing))
 
     def pop(self) -> Expr:
-        """pop removes the first element from the pq and returns it after resorting the pq"""
+        """pop removes the first element from the pq and returns it
+        after resorting the pq
+        """
         return pq_pop(self.box_name, self.type_size, self.lt)
 
     def remove(self, idx: Expr) -> Expr:
@@ -137,9 +143,11 @@ def unsorted(a, b, lt):
         Int(0),
         If(
             lt,
-            # sorted_lt checks to see if a is less than b by comparing the price|sequence both uint64
+            # sorted_lt checks to see if a is less than b by
+            # comparing the price|sequence both uint64
             BytesLt(Extract(a, Int(0), Int(2 * 8)), Extract(b, Int(0), Int(2 * 8))),
-            # sorted_gt checks to see if a is greater than b by comparing the price|~sequence both uint64
+            # sorted_gt checks to see if a is greater than b by
+            # comparing the price|~sequence both uint64
             BytesGt(
                 Concat(
                     Extract(a, Int(0), Int(8)),
@@ -230,8 +238,9 @@ def pq_search(key, val):
 # pq Heap invariant restoring operations
 @Subroutine(TealType.none)
 def pq_upheap(key, idx, len, sort_lt):
-    """pq_upheap restores the heap invariant property starting from a given index up the heap
-    by comparing the child with its parent, if needed, we swap the items and check again
+    """pq_upheap restores the heap invariant property starting from a
+    given index up the heap by comparing the child with its parent, if
+    needed, we swap the items and check again
     """
     return If(
         idx != Int(0),
@@ -255,9 +264,10 @@ def pq_upheap(key, idx, len, sort_lt):
 
 @Subroutine(TealType.none)
 def pq_downheap(key, idx, len, sort_lt):
-    """pq_downheap restores the heap invariant property starting from a given index down the heap
-    by comparing a parent with its children, if one or the other is larger we swap the items and check again
-    we preferr to swap the right element if both are larger
+    """pq_downheap restores the heap invariant property starting from a given index
+    down the heap by comparing a parent with its children, if one or the other is larger
+    we swap the items and check again we preferr to swap the right element
+    if both are larger
     """
     return If(
         idx < pq_count(key),

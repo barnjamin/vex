@@ -1,6 +1,6 @@
 import os
 from model import OrderBookSide
-from plot import chart_dom, chart_history
+from plot import chart_history
 
 base_path = "/tmp/boxtmp"
 
