@@ -42,7 +42,6 @@ class OrderBookSide:
             )
             if o.size == 0:
                 break
-
             obs.add_order(o)
 
         return obs

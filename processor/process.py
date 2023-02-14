@@ -1,5 +1,6 @@
 import os
 from model import OrderBookSide
+from plot import chart_dom, chart_history
 
 base_path = "/tmp/boxtmp"
 
@@ -12,9 +13,9 @@ def get_box_path(app_id: int, box_name: str):
     return f"{get_app_path(app_id)}/{box_name}"
 
 
-def process_app(app_id: int)->dict[int, tuple[OrderBookSide, OrderBookSide]]:
+def process_app(app_id: int) -> dict[int, tuple[OrderBookSide, OrderBookSide]]:
     box_names = os.listdir(get_app_path(app_id))
-    book_names = [ (b'ask_book').hex(),  (b'bid_book').hex()]
+    book_names = [(b"ask_book").hex(), (b"bid_book").hex()]
 
     parsed_contents: dict[str, dict[int, OrderBookSide]] = {}
 
@@ -27,14 +28,18 @@ def process_app(app_id: int)->dict[int, tuple[OrderBookSide, OrderBookSide]]:
         all_rounds |= set(parsed_contents[box_name].keys())
 
     dom_by_round: dict[int, tuple[OrderBookSide, OrderBookSide]] = {}
+    last_ask: OrderBookSide | None = None
+    last_bid: OrderBookSide | None = None
     for round in list(all_rounds):
-        # if not one side, use last one for that side
-        dom_by_round[round] = (
-            parsed_contents[book_names[0]][round],
-            parsed_contents[book_names[1]][round],
-        )
+        if round in parsed_contents[book_names[0]]:
+            last_ask = parsed_contents[book_names[0]][round]
+        if round in parsed_contents[book_names[1]]:
+            last_bid = parsed_contents[book_names[1]][round]
 
-    return dom_by_round 
+        # if not one side, use last one for that side
+        dom_by_round[round] = (last_ask, last_bid)  # type: ignore
+
+    return dom_by_round
 
 
 def process_boxes(app_id: int, box_name: str) -> dict[int, OrderBookSide]:
@@ -58,7 +63,8 @@ def process_boxes(app_id: int, box_name: str) -> dict[int, OrderBookSide]:
 if __name__ == "__main__":
     app_id = 612
     order_books = process_app(app_id)
-    print(order_books)
+    chart_history(order_books)
 
-
-
+    for round, books in order_books.items():
+        print(books[0].dom())
+        # chart_dom(books[0], books[1], f"dom_round{round}")
