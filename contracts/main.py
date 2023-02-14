@@ -1,6 +1,6 @@
 import random
 from beaker import sandbox, client
-from beaker.client.api_providers import Sandbox , Network
+from beaker.client.api_providers import Sandbox, Network
 from vex import Vex
 
 
