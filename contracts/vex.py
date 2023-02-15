@@ -96,23 +96,19 @@ class Vex(Application):
             # Copy it now so we can report size filled to caller
             output.set(size),
             If(is_bid.get())
-            .Then(
-                # Check to see if we can fill any asks
+            .Then( # Check to see if we can fill any asks
                 size.set(self.fill_asks(price.get(), size.get())),
-                # Still have size, put in the queue
-                If(size.get()).Then(
+                If(size.get()).Then( # Still have size, put in the queue
                     self.add_bid(
                         price,
                         size,
-                        Seq(self.seq.increment(), self.seq.get()),
+                        Seq(self.seq.increment(), self.seq),
                     ),
                 ),
             )
-            .Else(
-                # Check to see if we can fill any bids
+            .Else( # Check to see if we can fill any bids
                 size.set(self.fill_bids(price.get(), size.get())),
-                If(size.get()).Then(
-                    # Still have size, put it in the queue
+                If(size.get()).Then( # Still have size, put it in the queue
                     self.add_ask(
                         price,
                         size,
@@ -142,7 +138,8 @@ class Vex(Application):
 
     @external
     def register(self, acct: abi.Account, asset_a: abi.Asset, asset_b: abi.Asset):
-        # Add a new member to the member list, assigning them a sequence id that we can access
+        # Add a new member to the member list, assigning them a 
+        # sequence id that we can access
         return Assert(Int(0))
 
     @internal(TealType.none)
@@ -173,16 +170,13 @@ class Vex(Application):
             # Next order not fillable
             If(resting_price.get() < price, Return(size)),
             If(
-                # Is it a full or partial of resting
                 resting_size.get() <= size,
-                Seq(
-                    # Full fill of resting
+                Seq( # Full fill of resting
                     self.bid_queue.remove(Int(0)),
                     # Check the next one after subtracting filled portion
                     self.fill_bids(price, size - resting_size.get()),
                 ),
-                Seq(
-                    # Partial fill of resting
+                Seq( # Partial fill of resting
                     (seq := abi.Uint64()).set(ro.sequence),
                     (new_size := abi.Uint64()).set(resting_size.get() - size),
                     ro.set(resting_price, seq, new_size),

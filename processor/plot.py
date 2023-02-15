@@ -29,15 +29,17 @@ def chart_dom(
     name: str = "dom",
     ax: plt.Axes | None = None,
 ):
-    bid_side = bid.dom()
-    ask_side = ask.dom()
+    bid_x, bid_height = bid.dom()
+    ask_x, ask_height = ask.dom()
     if ax is None:
-        plt.bar(*bid_side, color="red")
-        plt.bar(*ask_side, color="blue")
+        plt.clf()
+        plt.bar(bid_x, bid_height, color="red")
+        plt.bar(ask_x, ask_height, color="blue")
         plt.savefig(f"{name}.png")
     else:
-        ax.bar(*bid_side, color="red")
-        ax.bar(*ask_side, color="blue")
+        ax.cla()
+        ax.bar(bid_x, bid_height, color="red")
+        ax.bar(ask_x, ask_height, color="blue")
 
 
 def chart_history(records: Records):
@@ -48,6 +50,7 @@ def chart_history(records: Records):
 
     def animate(rnd):
         ask, bid = records[rnd]
+        axes.set_title(f"Round: {rnd}")
         chart_dom(ask, bid, ax=axes)
 
     ani = FuncAnimation(
