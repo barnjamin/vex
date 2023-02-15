@@ -1,6 +1,6 @@
 hide-banner: true
 
-log-level: "INFO"
+log-level: "DEBUG"
 log-file: "/tmp/conduit.log"
 
 importer:
@@ -17,3 +17,7 @@ processors:
 
 exporter:
     name: box_exporter 
+    config: 
+        boxes-dir: "/tmp/boxes"
+        app-ids:
+          - 360

@@ -1,6 +1,6 @@
 import os
 from model import OrderBookSide
-from plot import chart_history, chart_dom
+from plot import chart_history
 
 base_path = "/tmp/boxtmp"
 
@@ -64,23 +64,3 @@ if __name__ == "__main__":
     app_id = 1 
     order_books = process_app(app_id)
     chart_history(order_books)
-
-    #for round, books in order_books.items():
-    #    chart_dom(books[0], books[1], name=f"dom_{round}")
-    #    if round>44:
-    #        break
-        #ask_prices, ask_sizes = books[0].dom()
-        #bid_prices, bid_sizes = books[1].dom()
-        #if len(bid_prices) == 0:
-        #    print("no bid")
-        #    continue
-        #if len(ask_prices) == 0:
-        #    print("no offer")
-        #    continue
-
-    #    if bid_prices[-1] > ask_prices[0]:
-    #        print("Round: ", round)
-    #        print("Bids: ", bid_prices)
-    #        print("Asks: ", ask_prices)
-
-    #    # chart_dom(books[0], books[1], f"dom_round{round}")

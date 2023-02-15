@@ -1,4 +1,4 @@
-from pyteal import Assert, Expr, If, Int, Or, Return, Seq, TealType, abi
+from pyteal import Assert, Expr, If, Int, Or, Return, Seq, TealType, abi, Reject
 from priority_queue import PriorityQueue, SortOrderGT, SortOrderLT
 from beaker import (
     AccountStateValue,
@@ -45,11 +45,14 @@ class IncomingOrderChangeSize(abi.NamedTuple):
 
 class Vex(Application):
 
+    # Config
     asset_a = ApplicationStateValue(TealType.uint64, static=True)
     asset_b = ApplicationStateValue(TealType.uint64, static=True)
     min_lot_a = ApplicationStateValue(TealType.uint64, static=True)
     min_lot_b = ApplicationStateValue(TealType.uint64, static=True)
     max_decimals = ApplicationStateValue(TealType.uint64, static=True)
+
+    # Updated
     seq = ApplicationStateValue(TealType.uint64)
     bid = ApplicationStateValue(TealType.uint64)
     ask = ApplicationStateValue(TealType.uint64)
@@ -117,13 +120,15 @@ class Vex(Application):
                 ),
             ),
             output.set(output.get() - size.get()),
+            # Update bid/mid/ask
+            self.update_stats()
         )
 
     @external
     def cancel_order(
         self, price: abi.Uint64, seq: abi.Uint64, size: abi.Uint64, acct_id: abi.Uint64
     ):
-        return Assert(Int(0))
+        return Reject() 
 
     @external
     def modify_order(
@@ -134,13 +139,32 @@ class Vex(Application):
         acct_id: abi.Uint64,
         new_size: abi.Uint64,
     ):
-        return Assert(Int(0))
+        return Reject() 
 
     @external
     def register(self, acct: abi.Account, asset_a: abi.Asset, asset_b: abi.Asset):
         # Add a new member to the member list, assigning them a 
         # sequence id that we can access
-        return Assert(Int(0))
+        return Reject()
+
+    @internal(TealType.none)
+    def update_stats(self):
+        return Seq(
+            If(self.ask_queue.count() > Int(0)).Then(
+                (ro := RestingOrder()).decode(self.ask_queue.peek()),
+                (resting_price := abi.Uint64()).set(ro.price),
+                self.ask.set(resting_price.get()),
+            ),
+            If(self.bid_queue.count() > Int(0)).Then(
+                # Peek the book and try to fill
+                (ro := RestingOrder()).decode(self.bid_queue.peek()),
+                (resting_price := abi.Uint64()).set(ro.price),
+                self.bid.set(resting_price.get()),
+            ),
+            If(self.ask > self.bid).Then(
+                self.mid.set(self.bid + ((self.ask - self.bid) / Int(2))),
+            )
+        )
 
     @internal(TealType.none)
     def add_bid(self, price: abi.Uint64, size: abi.Uint64, seq: Expr):
