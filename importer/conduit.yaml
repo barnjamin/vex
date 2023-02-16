@@ -16,8 +16,7 @@ processors:
         algod-token: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 exporter:
-    name: box_exporter 
+    name: file_writer 
     config: 
-        boxes-dir: "/tmp/boxes"
-        app-ids:
-          - 360
+        block-dir: "/tmp/blocks"
+        drop-certificate: true

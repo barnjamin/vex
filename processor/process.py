@@ -61,6 +61,6 @@ def process_boxes(app_id: int, box_name: str) -> dict[int, OrderBookSide]:
 
 
 if __name__ == "__main__":
-    app_id = 1 
+    app_id = 1
     order_books = process_app(app_id)
     chart_history(order_books)
